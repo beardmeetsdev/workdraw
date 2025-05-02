@@ -206,69 +206,68 @@ document.addEventListener("DOMContentLoaded", function () {
     ctx.lineWidth = 2;
     ctx.strokeRect(worktop.x, worktop.y, worktop.width, worktop.height);
 
-    // Add label and measurements if not in preview mode
-    if (!isPreview) {
+    // Add label only if not in preview mode
+    if (!isPreview && worktop.label) {
       // Label styling
       ctx.font = "bold 16px Arial";
       ctx.fillStyle = "#3498db";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // Display the label in the center of the worktop if it exists
-      if (worktop.label) {
-        ctx.fillText(
-          worktop.label,
-          worktop.x + worktop.width / 2,
-          worktop.y + worktop.height / 2
-        );
-      }
+      // Display the label in the center of the worktop
+      ctx.fillText(
+        worktop.label,
+        worktop.x + worktop.width / 2,
+        worktop.y + worktop.height / 2
+      );
+    }
 
-      // Add measurements to the edges
-      ctx.font = "12px Arial";
-      ctx.fillStyle = "#2c3e50";
+    // Add measurements to the edges (for both final and preview worktops)
+    // Use different styling for preview measurements
+    ctx.font = "12px Arial";
+    ctx.fillStyle = isPreview ? "rgba(44, 62, 80, 0.6)" : "#2c3e50"; // Lighter color for preview
 
-      if (worktop.direction === "horizontal") {
-        // For horizontal worktops, show length on the top edge
-        const lengthMm = Math.round(worktop.width * state.pixelsToMm);
+    if (worktop.direction === "horizontal") {
+      // For horizontal worktops, show length on the top edge
+      const lengthMm = Math.round(worktop.width * state.pixelsToMm);
 
-        // Draw measurement on top edge
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(
-          `${lengthMm}mm`,
-          worktop.x + worktop.width / 2,
-          worktop.y - 5
-        );
+      // Draw measurement on top edge
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(
+        `${lengthMm}mm`,
+        worktop.x + worktop.width / 2,
+        worktop.y - 5
+      );
 
-        // Draw the fixed width (600mm) on the right edge
-        ctx.save();
-        ctx.translate(
-          worktop.x + worktop.width + 5,
-          worktop.y + worktop.height / 2
-        );
-        ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = "center";
-        ctx.textBaseline = "top";
-        ctx.fillText("600mm", 0, 0);
-        ctx.restore();
-      } else {
-        // For vertical worktops, show length on the left edge
-        const lengthMm = Math.round(worktop.height * state.pixelsToMm);
+      // Draw the fixed width (600mm) on the right edge
+      ctx.save();
+      ctx.translate(
+        worktop.x + worktop.width + 5,
+        worktop.y + worktop.height / 2
+      );
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      ctx.fillText("600mm", 0, 0);
+      ctx.restore();
+    } else {
+      // For vertical worktops, show length on the left edge
+      const lengthMm = Math.round(worktop.height * state.pixelsToMm);
 
-        // Draw measurement on left edge
-        ctx.save();
-        ctx.translate(worktop.x - 5, worktop.y + worktop.height / 2);
-        ctx.rotate(-Math.PI / 2);
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText(`${lengthMm}mm`, 0, 0);
-        ctx.restore();
+      // Draw measurement on left edge
+      ctx.save();
+      ctx.translate(worktop.x - 5, worktop.y + worktop.height / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText(`${lengthMm}mm`, 0, 0);
+      ctx.restore();
 
-        // Draw the fixed width (600mm) on the top edge
-        ctx.textAlign = "center";
-        ctx.textBaseline = "bottom";
-        ctx.fillText("600mm", worktop.x + worktop.width / 2, worktop.y - 5);
-      }
+      // Draw the fixed width (600mm) on the top edge
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+      ctx.fillText("600mm", worktop.x + worktop.width / 2, worktop.y - 5);
     }
   }
 

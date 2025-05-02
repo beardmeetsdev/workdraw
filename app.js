@@ -15,7 +15,8 @@ document.addEventListener("DOMContentLoaded", function () {
     snapToGrid: true, // Enable grid snapping by default
     gridSize: 50, // Grid size for snapping
     detectedDirection: null, // 'horizontal' or 'vertical' for smart mode
-    directionThreshold: 38, // Minimum pixel movement to detect direction
+    initialDirectionThreshold: 10, // Minimum pixel movement to detect initial direction
+    directionChangeThreshold: 50, // Minimum pixel movement to detect a change in direction
     lastDirection: null, // Store the direction of the last line for alternating
     lastSignificantPoint: null, // Last point where direction changed
   };
@@ -356,7 +357,11 @@ document.addEventListener("DOMContentLoaded", function () {
       const dy = Math.abs(y - state.currentPoint.y);
 
       // Only detect direction if we've moved enough pixels
-      if (dx > state.directionThreshold || dy > state.directionThreshold) {
+      // Use the smaller initial threshold for first direction detection
+      if (
+        dx > state.initialDirectionThreshold ||
+        dy > state.initialDirectionThreshold
+      ) {
         if (dx > dy) {
           state.detectedDirection = "horizontal";
         } else {
@@ -375,7 +380,7 @@ document.addEventListener("DOMContentLoaded", function () {
       // Check if we've moved significantly in the perpendicular direction
       if (
         currentDirection === "horizontal" &&
-        dy > state.directionThreshold * 1.5
+        dy > state.directionChangeThreshold
       ) {
         // We were moving horizontally but now have significant vertical movement
 
@@ -402,7 +407,7 @@ document.addEventListener("DOMContentLoaded", function () {
         state.detectedDirection = "vertical";
       } else if (
         currentDirection === "vertical" &&
-        dx > state.directionThreshold * 1.5
+        dx > state.directionChangeThreshold
       ) {
         // We were moving vertically but now have significant horizontal movement
 

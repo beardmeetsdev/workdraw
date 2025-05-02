@@ -9,17 +9,18 @@ document.addEventListener("DOMContentLoaded", function () {
     isDrawing: false, // Whether we're currently drawing
     isDragging: false, // Whether the mouse is down
     currentPoint: null, // Current point (start of the current line)
-    worktopWidth: 100, // Fixed width for worktop rectangles (in pixels)
+    worktopWidth: 120, // Fixed width for worktop rectangles (in pixels) (600mm in real-world terms)
     worktops: [], // Store all completed worktop rectangles
     currentSegments: [], // Store line segments for the current drag operation
     snapToGrid: true, // Enable grid snapping by default
     gridSize: 50, // Grid size for snapping
     detectedDirection: null, // 'horizontal' or 'vertical' for smart mode
-    initialDirectionThreshold: 50, // Minimum pixel movement to detect initial direction
-    directionChangeThreshold: 60, // Minimum pixel movement to detect a change in direction
+    initialDirectionThreshold: 60, // Minimum pixel movement to detect initial direction
+    directionChangeThreshold: 70, // Minimum pixel movement to detect a change in direction
     lastDirection: null, // Store the direction of the last line for alternating
     lastSignificantPoint: null, // Last point where direction changed
     nextWorktopLabel: "A", // Next letter to use for labeling worktops
+    pixelsToMm: 5, // Conversion factor: 1 pixel = 5mm (120px = 600mm)
   };
 
   // Redraw the entire canvas
@@ -205,20 +206,69 @@ document.addEventListener("DOMContentLoaded", function () {
     ctx.lineWidth = 2;
     ctx.strokeRect(worktop.x, worktop.y, worktop.width, worktop.height);
 
-    // Add label if not in preview mode and a label exists
-    if (!isPreview && worktop.label) {
+    // Add label and measurements if not in preview mode
+    if (!isPreview) {
       // Label styling
       ctx.font = "bold 16px Arial";
       ctx.fillStyle = "#3498db";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // Display the label in the center of the worktop
-      ctx.fillText(
-        worktop.label,
-        worktop.x + worktop.width / 2,
-        worktop.y + worktop.height / 2
-      );
+      // Display the label in the center of the worktop if it exists
+      if (worktop.label) {
+        ctx.fillText(
+          worktop.label,
+          worktop.x + worktop.width / 2,
+          worktop.y + worktop.height / 2
+        );
+      }
+
+      // Add measurements to the edges
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "#2c3e50";
+
+      if (worktop.direction === "horizontal") {
+        // For horizontal worktops, show length on the top edge
+        const lengthMm = Math.round(worktop.width * state.pixelsToMm);
+
+        // Draw measurement on top edge
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(
+          `${lengthMm}mm`,
+          worktop.x + worktop.width / 2,
+          worktop.y - 5
+        );
+
+        // Draw the fixed width (600mm) on the right edge
+        ctx.save();
+        ctx.translate(
+          worktop.x + worktop.width + 5,
+          worktop.y + worktop.height / 2
+        );
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText("600mm", 0, 0);
+        ctx.restore();
+      } else {
+        // For vertical worktops, show length on the left edge
+        const lengthMm = Math.round(worktop.height * state.pixelsToMm);
+
+        // Draw measurement on left edge
+        ctx.save();
+        ctx.translate(worktop.x - 5, worktop.y + worktop.height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`${lengthMm}mm`, 0, 0);
+        ctx.restore();
+
+        // Draw the fixed width (600mm) on the top edge
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("600mm", worktop.x + worktop.width / 2, worktop.y - 5);
+      }
     }
   }
 

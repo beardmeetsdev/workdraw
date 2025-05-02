@@ -76,12 +76,18 @@ button.active {
   height: 100%;
 }
 
+.info-container {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
 .info-panel {
   background-color: #fff;
   padding: 15px;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
+  flex: 1;
 }
 
 .info-panel h3 {
@@ -91,4 +97,27 @@ button.active {
 
 .info-panel p {
   margin-bottom: 8px;
+}
+
+.worktop-list-panel {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 250px;
+}
+
+.worktop-list-panel h3 {
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+#worktop-list {
+  font-family: monospace;
+}
+
+#worktop-list p {
+  margin-bottom: 5px;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
 }

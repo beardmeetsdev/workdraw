@@ -23,6 +23,30 @@ document.addEventListener("DOMContentLoaded", function () {
     pixelsToMm: 5, // Conversion factor: 1 pixel = 5mm (120px = 600mm)
   };
 
+  // Update the worktop list in the UI
+  function updateWorktopList() {
+    const worktopListElement = document.getElementById("worktop-list");
+    worktopListElement.innerHTML = ""; // Clear the list
+
+    // Add each worktop to the list
+    for (const worktop of state.worktops) {
+      const p = document.createElement("p");
+
+      // Calculate dimensions in millimeters
+      let length, width;
+      if (worktop.direction === "horizontal") {
+        length = Math.round(worktop.width * state.pixelsToMm);
+        width = 600; // Fixed width
+      } else {
+        length = Math.round(worktop.height * state.pixelsToMm);
+        width = 600; // Fixed width
+      }
+
+      p.textContent = `${worktop.label}: ${length} x ${width}mm`;
+      worktopListElement.appendChild(p);
+    }
+  }
+
   // Redraw the entire canvas
   function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -34,6 +58,9 @@ document.addEventListener("DOMContentLoaded", function () {
     for (const worktop of state.worktops) {
       drawWorktop(worktop);
     }
+
+    // Update the worktop list
+    updateWorktopList();
 
     // Draw current segments as preview worktops
     if (state.isDrawing) {
@@ -651,6 +678,10 @@ document.addEventListener("DOMContentLoaded", function () {
     state.worktops = [];
     state.nextWorktopLabel = "A"; // Reset the label counter
     resetDrawingState();
+
+    // Clear the worktop list
+    const worktopListElement = document.getElementById("worktop-list");
+    worktopListElement.innerHTML = "";
   }
 
   // Set initial mode to smart

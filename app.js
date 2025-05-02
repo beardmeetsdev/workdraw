@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", function () {
     snapToGrid: true, // Enable grid snapping by default
     gridSize: 50, // Grid size for snapping
     detectedDirection: null, // 'horizontal' or 'vertical' for smart mode
-    directionThreshold: 20, // Minimum pixel movement to detect direction
+    directionThreshold: 38, // Minimum pixel movement to detect direction
     lastDirection: null, // Store the direction of the last line for alternating
     lastSignificantPoint: null, // Last point where direction changed
   };

@@ -187,28 +187,7 @@ document.addEventListener("DOMContentLoaded", function () {
     };
 
     // Only assign a label if this is a final worktop (not a preview)
-    if (!isPrevious && !isCurrent) {
-      // Assign the next available letter as the label
-      worktop.label = state.nextWorktopLabel;
-
-      // Increment the label for the next worktop
-      // If we reach 'Z', wrap around to 'AA', 'AB', etc.
-      if (state.nextWorktopLabel === "Z") {
-        state.nextWorktopLabel = "AA";
-      } else if (
-        state.nextWorktopLabel.length > 1 &&
-        state.nextWorktopLabel[1] === "Z"
-      ) {
-        state.nextWorktopLabel =
-          String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1) + "A";
-      } else {
-        state.nextWorktopLabel =
-          state.nextWorktopLabel.length === 1
-            ? String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1)
-            : state.nextWorktopLabel[0] +
-              String.fromCharCode(state.nextWorktopLabel.charCodeAt(1) + 1);
-      }
-    }
+    // We'll handle label assignment separately in handleMouseUp
 
     return worktop;
   }
@@ -522,13 +501,29 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (length > 10) {
         // Create a worktop from the segment with corner adjustments
-        // For final worktops, we don't pass isPrevious or isCurrent flags
-        // This ensures the label is assigned
-        const worktop = createWorktopFromSegment({
-          ...segment,
-          isPrevious: false,
-          isCurrent: false,
-        });
+        // Keep the isPrevious and isCurrent flags for proper corner handling
+        const worktop = createWorktopFromSegment(segment);
+
+        // Assign the next available letter as the label
+        worktop.label = state.nextWorktopLabel;
+
+        // Increment the label for the next worktop
+        // If we reach 'Z', wrap around to 'AA', 'AB', etc.
+        if (state.nextWorktopLabel === "Z") {
+          state.nextWorktopLabel = "AA";
+        } else if (
+          state.nextWorktopLabel.length > 1 &&
+          state.nextWorktopLabel[1] === "Z"
+        ) {
+          state.nextWorktopLabel =
+            String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1) + "A";
+        } else {
+          state.nextWorktopLabel =
+            state.nextWorktopLabel.length === 1
+              ? String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1)
+              : state.nextWorktopLabel[0] +
+                String.fromCharCode(state.nextWorktopLabel.charCodeAt(1) + 1);
+        }
 
         // Add it to the collection
         state.worktops.push(worktop);

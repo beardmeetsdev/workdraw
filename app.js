@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function () {
     directionChangeThreshold: 60, // Minimum pixel movement to detect a change in direction
     lastDirection: null, // Store the direction of the last line for alternating
     lastSignificantPoint: null, // Last point where direction changed
+    nextWorktopLabel: "A", // Next letter to use for labeling worktops
   };
 
   // Redraw the entire canvas
@@ -172,7 +173,8 @@ document.addEventListener("DOMContentLoaded", function () {
       h = Math.abs(adjustedEnd.y - adjustedStart.y);
     }
 
-    return {
+    // Create the worktop object
+    const worktop = {
       x,
       y,
       width: w,
@@ -183,6 +185,32 @@ document.addEventListener("DOMContentLoaded", function () {
       originalStart: { x: start.x, y: start.y },
       originalEnd: { x: end.x, y: end.y },
     };
+
+    // Only assign a label if this is a final worktop (not a preview)
+    if (!isPrevious && !isCurrent) {
+      // Assign the next available letter as the label
+      worktop.label = state.nextWorktopLabel;
+
+      // Increment the label for the next worktop
+      // If we reach 'Z', wrap around to 'AA', 'AB', etc.
+      if (state.nextWorktopLabel === "Z") {
+        state.nextWorktopLabel = "AA";
+      } else if (
+        state.nextWorktopLabel.length > 1 &&
+        state.nextWorktopLabel[1] === "Z"
+      ) {
+        state.nextWorktopLabel =
+          String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1) + "A";
+      } else {
+        state.nextWorktopLabel =
+          state.nextWorktopLabel.length === 1
+            ? String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1)
+            : state.nextWorktopLabel[0] +
+              String.fromCharCode(state.nextWorktopLabel.charCodeAt(1) + 1);
+      }
+    }
+
+    return worktop;
   }
 
   // Draw a worktop rectangle
@@ -198,32 +226,20 @@ document.addEventListener("DOMContentLoaded", function () {
     ctx.lineWidth = 2;
     ctx.strokeRect(worktop.x, worktop.y, worktop.width, worktop.height);
 
-    // Add measurements if not in preview mode
-    if (!isPreview) {
-      // Length measurement
-      ctx.font = "bold 12px Arial";
+    // Add label if not in preview mode and a label exists
+    if (!isPreview && worktop.label) {
+      // Label styling
+      ctx.font = "bold 16px Arial";
       ctx.fillStyle = "#3498db";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      if (worktop.direction === "horizontal") {
-        // For horizontal worktops, show length on top
-        ctx.fillText(
-          `£${Math.round(worktop.width)}`,
-          worktop.x + worktop.width / 2,
-          worktop.y + worktop.height / 2
-        );
-      } else {
-        // For vertical worktops, show length rotated
-        ctx.save();
-        ctx.translate(
-          worktop.x + worktop.width / 2,
-          worktop.y + worktop.height / 2
-        );
-        ctx.rotate(-Math.PI / 2);
-        ctx.fillText(`£${Math.round(worktop.height)}`, 0, 0);
-        ctx.restore();
-      }
+      // Display the label in the center of the worktop
+      ctx.fillText(
+        worktop.label,
+        worktop.x + worktop.width / 2,
+        worktop.y + worktop.height / 2
+      );
     }
   }
 
@@ -506,7 +522,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (length > 10) {
         // Create a worktop from the segment with corner adjustments
-        const worktop = createWorktopFromSegment(segment);
+        // For final worktops, we don't pass isPrevious or isCurrent flags
+        // This ensures the label is assigned
+        const worktop = createWorktopFromSegment({
+          ...segment,
+          isPrevious: false,
+          isCurrent: false,
+        });
 
         // Add it to the collection
         state.worktops.push(worktop);
@@ -583,6 +605,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear the canvas
   function clearCanvas() {
     state.worktops = [];
+    state.nextWorktopLabel = "A"; // Reset the label counter
     resetDrawingState();
   }
 

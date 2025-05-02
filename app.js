@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", function () {
     lastSignificantPoint: null, // Last point where direction changed
     nextWorktopLabel: "A", // Next letter to use for labeling worktops
     pixelsToMm: 5, // Conversion factor: 1 pixel = 5mm (120px = 600mm)
+    isFirstSegment: true, // Flag to track if this is the first segment in a drawing session
   };
 
   // Update the worktop list in the UI
@@ -91,6 +92,7 @@ document.addEventListener("DOMContentLoaded", function () {
         // Calculate preview end point based on current mouse position and direction
         const lastPoint = state.lastSignificantPoint;
         const mousePos = state.lastMousePosition || lastPoint;
+        const initialPoint = state.currentPoint; // The initial click point
 
         let previewEndX, previewEndY;
 
@@ -103,12 +105,26 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Create a preview segment
-        const previewSegment = {
-          start: { x: lastPoint.x, y: lastPoint.y },
-          end: { x: previewEndX, y: previewEndY },
-          direction: state.detectedDirection,
-          isCurrent: true, // Mark as current for corner adjustment
-        };
+        let previewSegment;
+
+        // For the first segment in a drawing session, use the initial click point
+        // instead of waiting for the direction threshold
+        if (state.isFirstSegment) {
+          previewSegment = {
+            start: { x: initialPoint.x, y: initialPoint.y },
+            end: { x: previewEndX, y: previewEndY },
+            direction: state.detectedDirection,
+            isCurrent: true, // Mark as current for corner adjustment
+            isFirstSegment: true, // Special flag for the first segment
+          };
+        } else {
+          previewSegment = {
+            start: { x: lastPoint.x, y: lastPoint.y },
+            end: { x: previewEndX, y: previewEndY },
+            direction: state.detectedDirection,
+            isCurrent: true, // Mark as current for corner adjustment
+          };
+        }
 
         // Draw it as a worktop
         const previewWorktop = createWorktopFromSegment(previewSegment);
@@ -134,7 +150,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Create a worktop rectangle from a line segment
   function createWorktopFromSegment(segment) {
-    const { start, end, direction, isPrevious, isCurrent } = segment;
+    const { start, end, direction, isPrevious, isCurrent, isFirstSegment } =
+      segment;
     const width = state.worktopWidth;
     const halfWidth = width / 2;
 
@@ -163,8 +180,10 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    if (isCurrent) {
-      // For current worktop, shorten the start point by half the worktop width
+    // For the first segment in a drawing session, don't shorten the start point
+    // This ensures the worktop starts from the initial click point
+    if (isCurrent && !isFirstSegment) {
+      // For current worktop (but not the first segment), shorten the start point by half the worktop width
       if (direction === "horizontal") {
         // For horizontal worktops, shorten in X direction
         if (end.x > start.x) {
@@ -390,6 +409,7 @@ document.addEventListener("DOMContentLoaded", function () {
     state.isDragging = true;
     state.isDrawing = true;
     state.currentSegments = [];
+    state.isFirstSegment = true; // Mark this as the first segment in a new drawing session
 
     const { x, y } = getMouseCoordinates(e);
 
@@ -438,6 +458,10 @@ document.addEventListener("DOMContentLoaded", function () {
         } else {
           state.detectedDirection = "vertical";
         }
+
+        // We've detected the initial direction, so this is no longer the first segment
+        // for future direction changes
+        state.isFirstSegment = false;
       }
     } else {
       // We already have a direction, check if we need to change it
@@ -546,6 +570,7 @@ document.addEventListener("DOMContentLoaded", function () {
         end: { x: endX, y: endY },
         direction: state.detectedDirection,
         isCurrent: true, // Mark as current for corner adjustment
+        isFirstSegment: state.isFirstSegment, // Pass the first segment flag
       });
     }
 

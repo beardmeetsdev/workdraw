@@ -9,45 +9,19 @@ document.addEventListener("DOMContentLoaded", function () {
     isDrawing: false, // Whether we're currently drawing
     isDragging: false, // Whether the mouse is down
     currentPoint: null, // Current point (start of the current line)
-    originalClickPoint: null, // Store the original mouse click point before backfilling
     worktopWidth: 120, // Fixed width for worktop rectangles (in pixels) (600mm in real-world terms)
     worktops: [], // Store all completed worktop rectangles
     currentSegments: [], // Store line segments for the current drag operation
     snapToGrid: true, // Enable grid snapping by default
-    gridSize: 20, // Grid size for snapping (20px = 100mm with 5mm per pixel)
+    gridSize: 50, // Grid size for snapping
     detectedDirection: null, // 'horizontal' or 'vertical' for smart mode
     initialDirectionThreshold: 60, // Minimum pixel movement to detect initial direction
     directionChangeThreshold: 70, // Minimum pixel movement to detect a change in direction
     lastDirection: null, // Store the direction of the last line for alternating
     lastSignificantPoint: null, // Last point where direction changed
     nextWorktopLabel: "A", // Next letter to use for labeling worktops
-    pixelsToMm: 5, // Conversion factor: 1 pixel = 5mm (120px = 600mm, 20px grid = 100mm)
-    isFirstSegment: true, // Flag to track if this is the first segment in a drawing session
+    pixelsToMm: 5, // Conversion factor: 1 pixel = 5mm (120px = 600mm)
   };
-
-  // Update the worktop list in the UI
-  function updateWorktopList() {
-    const worktopListElement = document.getElementById("worktop-list");
-    worktopListElement.innerHTML = ""; // Clear the list
-
-    // Add each worktop to the list
-    for (const worktop of state.worktops) {
-      const p = document.createElement("p");
-
-      // Calculate dimensions in millimeters
-      let length, width;
-      if (worktop.direction === "horizontal") {
-        length = Math.round(worktop.width * state.pixelsToMm);
-        width = 600; // Fixed width
-      } else {
-        length = Math.round(worktop.height * state.pixelsToMm);
-        width = 600; // Fixed width
-      }
-
-      p.textContent = `${worktop.label}: ${length} x ${width}mm`;
-      worktopListElement.appendChild(p);
-    }
-  }
 
   // Redraw the entire canvas
   function redrawCanvas() {
@@ -60,9 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
     for (const worktop of state.worktops) {
       drawWorktop(worktop);
     }
-
-    // Update the worktop list
-    updateWorktopList();
 
     // Draw current segments as preview worktops
     if (state.isDrawing) {
@@ -93,7 +64,6 @@ document.addEventListener("DOMContentLoaded", function () {
         // Calculate preview end point based on current mouse position and direction
         const lastPoint = state.lastSignificantPoint;
         const mousePos = state.lastMousePosition || lastPoint;
-        const initialPoint = state.currentPoint; // The initial click point
 
         let previewEndX, previewEndY;
 
@@ -106,51 +76,22 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         // Create a preview segment
-        let previewSegment;
-
-        // Check if this would be the first segment
-        const isFirstSegmentBeingCreated = state.currentSegments.length === 0;
-
-        // For the first segment in a drawing session, use the initial click point
-        // instead of waiting for the direction threshold
-        if (isFirstSegmentBeingCreated) {
-          previewSegment = {
-            start: { x: initialPoint.x, y: initialPoint.y },
-            end: { x: previewEndX, y: previewEndY },
-            direction: state.detectedDirection,
-            isCurrent: true, // Mark as current for corner adjustment
-            isFirstSegment: true, // Special flag for the first segment
-          };
-        } else {
-          previewSegment = {
-            start: { x: lastPoint.x, y: lastPoint.y },
-            end: { x: previewEndX, y: previewEndY },
-            direction: state.detectedDirection,
-            isCurrent: true, // Mark as current for corner adjustment
-            isFirstSegment: false, // Not the first segment
-          };
-        }
+        const previewSegment = {
+          start: { x: lastPoint.x, y: lastPoint.y },
+          end: { x: previewEndX, y: previewEndY },
+          direction: state.detectedDirection,
+          isCurrent: true, // Mark as current for corner adjustment
+        };
 
         // Draw it as a worktop
         const previewWorktop = createWorktopFromSegment(previewSegment);
-
         drawWorktop(previewWorktop, true);
       }
     }
 
     // Draw points at significant locations
-    if (state.originalClickPoint && state.isDrawing) {
-      // Draw the original click point in green
-      drawPoint(
-        state.originalClickPoint.x,
-        state.originalClickPoint.y,
-        "#00FF00"
-      ); // Original click point (green)
-    }
-
     if (state.currentPoint && state.isDrawing) {
-      // Draw the current point (which may be backfilled) in red
-      drawPoint(state.currentPoint.x, state.currentPoint.y, "#FF0000"); // Starting point (red)
+      drawPoint(state.currentPoint.x, state.currentPoint.y); // Starting point
     }
 
     if (state.lastSignificantPoint && state.isDrawing) {
@@ -166,8 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Create a worktop rectangle from a line segment
   function createWorktopFromSegment(segment) {
-    const { start, end, direction, isPrevious, isCurrent, isFirstSegment } =
-      segment;
+    const { start, end, direction, isPrevious, isCurrent } = segment;
     const width = state.worktopWidth;
     const halfWidth = width / 2;
 
@@ -196,10 +136,8 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // For the first segment in a drawing session, don't shorten the start point
-    // This ensures the worktop starts from the initial click point
-    if (isCurrent && !isFirstSegment) {
-      // For current worktop (but not the first segment), shorten the start point by half the worktop width
+    if (isCurrent) {
+      // For current worktop, shorten the start point by half the worktop width
       if (direction === "horizontal") {
         // For horizontal worktops, shorten in X direction
         if (end.x > start.x) {
@@ -268,68 +206,69 @@ document.addEventListener("DOMContentLoaded", function () {
     ctx.lineWidth = 2;
     ctx.strokeRect(worktop.x, worktop.y, worktop.width, worktop.height);
 
-    // Add label only if not in preview mode
-    if (!isPreview && worktop.label) {
+    // Add label and measurements if not in preview mode
+    if (!isPreview) {
       // Label styling
       ctx.font = "bold 16px Arial";
       ctx.fillStyle = "#3498db";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
 
-      // Display the label in the center of the worktop
-      ctx.fillText(
-        worktop.label,
-        worktop.x + worktop.width / 2,
-        worktop.y + worktop.height / 2
-      );
-    }
+      // Display the label in the center of the worktop if it exists
+      if (worktop.label) {
+        ctx.fillText(
+          worktop.label,
+          worktop.x + worktop.width / 2,
+          worktop.y + worktop.height / 2
+        );
+      }
 
-    // Add measurements to the edges (for both final and preview worktops)
-    // Use different styling for preview measurements
-    ctx.font = "12px Arial";
-    ctx.fillStyle = isPreview ? "rgba(44, 62, 80, 0.6)" : "#2c3e50"; // Lighter color for preview
+      // Add measurements to the edges
+      ctx.font = "12px Arial";
+      ctx.fillStyle = "#2c3e50";
 
-    if (worktop.direction === "horizontal") {
-      // For horizontal worktops, show length on the top edge
-      const lengthMm = Math.round(worktop.width * state.pixelsToMm);
+      if (worktop.direction === "horizontal") {
+        // For horizontal worktops, show length on the top edge
+        const lengthMm = Math.round(worktop.width * state.pixelsToMm);
 
-      // Draw measurement on top edge
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText(
-        `${lengthMm}mm`,
-        worktop.x + worktop.width / 2,
-        worktop.y - 5
-      );
+        // Draw measurement on top edge
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(
+          `${lengthMm}mm`,
+          worktop.x + worktop.width / 2,
+          worktop.y - 5
+        );
 
-      // Draw the fixed width (600mm) on the right edge
-      ctx.save();
-      ctx.translate(
-        worktop.x + worktop.width + 5,
-        worktop.y + worktop.height / 2
-      );
-      ctx.rotate(-Math.PI / 2);
-      ctx.textAlign = "center";
-      ctx.textBaseline = "top";
-      ctx.fillText("600mm", 0, 0);
-      ctx.restore();
-    } else {
-      // For vertical worktops, show length on the left edge
-      const lengthMm = Math.round(worktop.height * state.pixelsToMm);
+        // Draw the fixed width (600mm) on the right edge
+        ctx.save();
+        ctx.translate(
+          worktop.x + worktop.width + 5,
+          worktop.y + worktop.height / 2
+        );
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillText("600mm", 0, 0);
+        ctx.restore();
+      } else {
+        // For vertical worktops, show length on the left edge
+        const lengthMm = Math.round(worktop.height * state.pixelsToMm);
 
-      // Draw measurement on left edge
-      ctx.save();
-      ctx.translate(worktop.x - 5, worktop.y + worktop.height / 2);
-      ctx.rotate(-Math.PI / 2);
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText(`${lengthMm}mm`, 0, 0);
-      ctx.restore();
+        // Draw measurement on left edge
+        ctx.save();
+        ctx.translate(worktop.x - 5, worktop.y + worktop.height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(`${lengthMm}mm`, 0, 0);
+        ctx.restore();
 
-      // Draw the fixed width (600mm) on the top edge
-      ctx.textAlign = "center";
-      ctx.textBaseline = "bottom";
-      ctx.fillText("600mm", worktop.x + worktop.width / 2, worktop.y - 5);
+        // Draw the fixed width (600mm) on the top edge
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("600mm", worktop.x + worktop.width / 2, worktop.y - 5);
+      }
     }
   }
 
@@ -370,7 +309,6 @@ document.addEventListener("DOMContentLoaded", function () {
     state.isDragging = false;
     state.detectedDirection = null;
     state.currentPoint = null;
-    state.originalClickPoint = null; // Reset the original click point
     state.lastDirection = null;
     state.currentSegments = [];
     state.lastSignificantPoint = null;
@@ -426,7 +364,6 @@ document.addEventListener("DOMContentLoaded", function () {
     state.isDragging = true;
     state.isDrawing = true;
     state.currentSegments = [];
-    state.isFirstSegment = true; // Mark this as the first segment in a new drawing session
 
     const { x, y } = getMouseCoordinates(e);
 
@@ -435,7 +372,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Set the starting point
     state.currentPoint = { x, y };
-    state.originalClickPoint = { x, y }; // Store the original click point
     state.lastSignificantPoint = { x, y };
 
     // Reset direction detection for this new drawing
@@ -471,18 +407,11 @@ document.addEventListener("DOMContentLoaded", function () {
         dx > state.initialDirectionThreshold ||
         dy > state.initialDirectionThreshold
       ) {
-        // Determine direction based on which axis has more movement
         if (dx > dy) {
           state.detectedDirection = "horizontal";
-          console.log("Detected horizontal direction");
         } else {
           state.detectedDirection = "vertical";
-          console.log("Detected vertical direction");
         }
-
-        // We've detected the initial direction, so this is no longer the first segment
-        // for future direction changes
-        state.isFirstSegment = false;
       }
     } else {
       // We already have a direction, check if we need to change it
@@ -508,16 +437,12 @@ document.addEventListener("DOMContentLoaded", function () {
         // For horizontal worktops, we don't need to adjust the X coordinate
         // since we're extending in the horizontal direction
 
-        // Check if this is the first segment being created
-        const isFirstSegmentBeingCreated = state.currentSegments.length === 0;
-
         // Add the completed segment (Previous worktop)
         state.currentSegments.push({
           start: { x: lastPoint.x, y: lastPoint.y },
           end: { x: endX, y: endY },
           direction: "horizontal",
           isPrevious: true, // Mark as previous for corner adjustment
-          isFirstSegment: isFirstSegmentBeingCreated, // Explicitly set based on segment count
         });
 
         // Update the last significant point to the corner
@@ -539,16 +464,12 @@ document.addEventListener("DOMContentLoaded", function () {
         // For vertical worktops, we don't need to adjust the Y coordinate
         // since we're extending in the vertical direction
 
-        // Check if this is the first segment being created
-        const isFirstSegmentBeingCreated = state.currentSegments.length === 0;
-
         // Add the completed segment (Previous worktop)
         state.currentSegments.push({
           start: { x: lastPoint.x, y: lastPoint.y },
           end: { x: endX, y: endY },
           direction: "vertical",
           isPrevious: true, // Mark as previous for corner adjustment
-          isFirstSegment: isFirstSegmentBeingCreated, // Explicitly set based on segment count
         });
 
         // Update the last significant point to the corner
@@ -591,10 +512,6 @@ document.addEventListener("DOMContentLoaded", function () {
       }
 
       // Add the final segment (Current worktop)
-
-      // Check if this is the first segment being created
-      const isFirstSegmentBeingCreated = state.currentSegments.length === 0;
-
       state.currentSegments.push({
         start: {
           x: state.lastSignificantPoint.x,
@@ -603,7 +520,6 @@ document.addEventListener("DOMContentLoaded", function () {
         end: { x: endX, y: endY },
         direction: state.detectedDirection,
         isCurrent: true, // Mark as current for corner adjustment
-        isFirstSegment: isFirstSegmentBeingCreated, // Explicitly set based on segment count
       });
     }
 
@@ -672,7 +588,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Reset for next drawing
     state.currentPoint = null;
-    state.originalClickPoint = null; // Reset the original click point
     state.lastSignificantPoint = null;
     state.detectedDirection = null;
     state.currentSegments = [];
@@ -683,10 +598,10 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   // Draw a point marker
-  function drawPoint(x, y, color = "#3498db") {
+  function drawPoint(x, y) {
     ctx.beginPath();
     ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = color;
+    ctx.fillStyle = "#3498db";
     ctx.fill();
   }
 
@@ -712,7 +627,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     ctx.stroke();
 
-    // Draw thicker lines every 5 grid cells (500mm or 0.5m)
+    // Draw thicker lines every 5 grid cells
     ctx.beginPath();
     ctx.strokeStyle = "#aaa";
     ctx.lineWidth = 1;
@@ -729,24 +644,6 @@ document.addEventListener("DOMContentLoaded", function () {
       ctx.lineTo(canvas.width, y);
     }
 
-    // Add measurements to the grid (every 500mm)
-    ctx.font = "10px Arial";
-    ctx.fillStyle = "#888";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-
-    // Add horizontal measurements (along the top)
-    for (let x = gridSize * 5; x <= canvas.width; x += gridSize * 5) {
-      const mm = (x / gridSize) * 100; // Convert to mm
-      ctx.fillText(`${mm}mm`, x + 2, 2);
-    }
-
-    // Add vertical measurements (along the left side)
-    for (let y = gridSize * 5; y <= canvas.height; y += gridSize * 5) {
-      const mm = (y / gridSize) * 100; // Convert to mm
-      ctx.fillText(`${mm}mm`, 2, y + 2);
-    }
-
     ctx.stroke();
   }
 
@@ -755,10 +652,6 @@ document.addEventListener("DOMContentLoaded", function () {
     state.worktops = [];
     state.nextWorktopLabel = "A"; // Reset the label counter
     resetDrawingState();
-
-    // Clear the worktop list
-    const worktopListElement = document.getElementById("worktop-list");
-    worktopListElement.innerHTML = "";
   }
 
   // Set initial mode to smart

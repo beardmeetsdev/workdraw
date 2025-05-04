@@ -3,6 +3,15 @@ document.addEventListener("DOMContentLoaded", function () {
   const canvas = document.getElementById("canvas");
   const ctx = canvas.getContext("2d");
 
+  // Variables for worktop editing
+  let editingWorktopIndex = -1;
+  const modal = document.getElementById("edit-modal");
+  const closeButton = document.querySelector(".close-button");
+  const saveButton = document.getElementById("save-dimensions");
+  const cancelButton = document.getElementById("cancel-edit");
+  const lengthInput = document.getElementById("worktop-length");
+  const widthInput = document.getElementById("worktop-width");
+
   // Application state
   const state = {
     mode: "smart", // Only 'smart' is used now
@@ -11,7 +20,9 @@ document.addEventListener("DOMContentLoaded", function () {
     currentPoint: null, // Current point (start of the current line)
     originalClickPoint: null, // Store the original mouse click point before backfilling
     worktopWidth: 120, // Fixed width for worktop rectangles (in pixels) (600mm in real-world terms)
-    worktops: [], // Store all completed worktop rectangles
+    worktops: [], // Store all completed worktop rectangles (legacy - will be replaced by shapes)
+    shapes: [], // Store completed worktop shapes (each shape can contain multiple segments)
+    currentShape: null, // The shape currently being drawn
     currentSegments: [], // Store line segments for the current drag operation
     snapToGrid: true, // Enable grid snapping by default
     gridSize: 20, // Grid size for snapping (20px = 100mm with 5mm per pixel)
@@ -23,14 +34,68 @@ document.addEventListener("DOMContentLoaded", function () {
     nextWorktopLabel: "A", // Next letter to use for labeling worktops
     pixelsToMm: 5, // Conversion factor: 1 pixel = 5mm (120px = 600mm, 20px grid = 100mm)
     isFirstSegment: true, // Flag to track if this is the first segment in a drawing session
+    divisionMode: false, // Whether we're in division mode (placing join lines)
   };
+
+  // Create a shape object from segments
+  function createShapeFromSegments(segments) {
+    // Create a new shape object
+    const shape = {
+      id: Date.now(), // Unique ID for the shape
+      segments: [], // Array of segments that make up the shape
+      joinPoints: [], // Array of points where the shape will be divided into worktops
+      worktops: [], // Array of worktops after division
+    };
+
+    // Process each segment to create worktop rectangles
+    for (const segment of segments) {
+      // Create a worktop from the segment with corner adjustments
+      const worktopSegment = createWorktopFromSegment(segment);
+
+      // Add the segment to the shape
+      shape.segments.push(worktopSegment);
+    }
+
+    return shape;
+  }
 
   // Update the worktop list in the UI
   function updateWorktopList() {
     const worktopListElement = document.getElementById("worktop-list");
     worktopListElement.innerHTML = ""; // Clear the list
 
-    // Add each worktop to the list
+    // If we have shapes, show them instead of individual worktops
+    if (state.shapes.length > 0) {
+      for (let i = 0; i < state.shapes.length; i++) {
+        const shape = state.shapes[i];
+        const p = document.createElement("p");
+
+        // Calculate total length of the shape
+        let totalLength = 0;
+        for (const segment of shape.segments) {
+          if (segment.direction === "horizontal") {
+            totalLength += Math.round(segment.width * state.pixelsToMm);
+          } else {
+            totalLength += Math.round(segment.height * state.pixelsToMm);
+          }
+        }
+
+        p.textContent = `Shape ${i + 1}: ${totalLength}mm total length`;
+        p.dataset.shapeId = shape.id;
+        worktopListElement.appendChild(p);
+      }
+
+      // Add a button to enter division mode
+      const divButton = document.createElement("button");
+      divButton.textContent = "Divide Shapes";
+      divButton.id = "divide-shapes";
+      divButton.addEventListener("click", toggleDivisionMode);
+      worktopListElement.appendChild(divButton);
+
+      return;
+    }
+
+    // Legacy: Add each worktop to the list
     for (const worktop of state.worktops) {
       const p = document.createElement("p");
 
@@ -49,6 +114,46 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Toggle division mode
+  function toggleDivisionMode() {
+    state.divisionMode = !state.divisionMode;
+
+    // Update the toolbar button
+    const toolbarButton = document.getElementById("toggle-division");
+    if (state.divisionMode) {
+      toolbarButton.textContent = "Exit Division Mode";
+      toolbarButton.classList.add("active");
+    } else {
+      toolbarButton.textContent = "Division Mode";
+      toolbarButton.classList.remove("active");
+    }
+
+    // Also update the button in the worktop list if it exists
+    const listButton = document.getElementById("divide-shapes");
+    if (listButton) {
+      if (state.divisionMode) {
+        listButton.textContent = "Exit Division Mode";
+        listButton.classList.add("active");
+      } else {
+        listButton.textContent = "Divide Shapes";
+        listButton.classList.remove("active");
+      }
+    }
+
+    redrawCanvas();
+  }
+
+  // Show or hide the division mode button based on whether there are shapes
+  function updateDivisionModeButton() {
+    const button = document.getElementById("toggle-division");
+    if (state.shapes.length > 0) {
+      button.style.display = "inline-block";
+    } else {
+      button.style.display = "none";
+      state.divisionMode = false;
+    }
+  }
+
   // Redraw the entire canvas
   function redrawCanvas() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -56,15 +161,25 @@ document.addEventListener("DOMContentLoaded", function () {
     // Draw grid
     drawGrid();
 
-    // Draw all completed worktops
-    for (const worktop of state.worktops) {
-      drawWorktop(worktop);
+    // Draw all completed shapes
+    for (const shape of state.shapes) {
+      drawShape(shape);
+    }
+
+    // Legacy: Draw all completed worktops if no shapes
+    if (state.shapes.length === 0) {
+      for (const worktop of state.worktops) {
+        drawWorktop(worktop);
+      }
     }
 
     // Update the worktop list
     updateWorktopList();
 
-    // Draw current segments as preview worktops
+    // Update the division mode button visibility
+    updateDivisionModeButton();
+
+    // Draw current segments as preview shape
     if (state.isDrawing) {
       // Create a copy of segments for preview with proper corner adjustments
       const previewSegments = [...state.currentSegments];
@@ -82,13 +197,10 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
 
-      // Draw all completed segments in the current drawing session
-      for (const segment of previewSegments) {
-        const worktopSegment = createWorktopFromSegment(segment);
-        drawWorktop(worktopSegment, true); // true = preview mode
-      }
+      // Create preview segments array including current segments and the active segment
+      let allPreviewSegments = [...previewSegments];
 
-      // Draw preview for the current segment being drawn
+      // Add the current segment being drawn if applicable
       if (state.lastSignificantPoint && state.detectedDirection) {
         // Calculate preview end point based on current mouse position and direction
         const lastPoint = state.lastSignificantPoint;
@@ -131,10 +243,19 @@ document.addEventListener("DOMContentLoaded", function () {
           };
         }
 
-        // Draw it as a worktop
-        const previewWorktop = createWorktopFromSegment(previewSegment);
+        // Add to the preview segments
+        allPreviewSegments.push(previewSegment);
+      }
 
-        drawWorktop(previewWorktop, true);
+      // If we have any segments to preview, create and draw a preview shape
+      if (allPreviewSegments.length > 0) {
+        // Create worktop segments from the preview segments
+        const worktopSegments = allPreviewSegments.map((segment) =>
+          createWorktopFromSegment(segment)
+        );
+
+        // Draw the preview shape
+        drawPreviewShape(worktopSegments);
       }
     }
 
@@ -255,6 +376,364 @@ document.addEventListener("DOMContentLoaded", function () {
     return worktop;
   }
 
+  // Draw a preview shape (collection of connected worktop segments)
+  function drawPreviewShape(segments) {
+    // First, fill all segments with a semi-transparent color
+    ctx.fillStyle = "rgba(52, 152, 219, 0.3)";
+
+    // Draw each segment in the shape (fill only)
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+      ctx.fillRect(segment.x, segment.y, segment.width, segment.height);
+    }
+
+    // Now draw only the outer border of the entire shape
+    ctx.strokeStyle = "#3498db";
+    ctx.lineWidth = 2;
+
+    // We need to determine which edges are external edges
+    // For each segment, check if each edge is an external edge
+    for (let i = 0; i < segments.length; i++) {
+      const segment = segments[i];
+
+      // Check top edge
+      let isTopExternal = true;
+      for (let j = 0; j < segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = segments[j];
+          if (
+            segment.y === otherSegment.y + otherSegment.height && // Segment is below other segment
+            segment.x < otherSegment.x + otherSegment.width && // Segments overlap horizontally
+            segment.x + segment.width > otherSegment.x
+          ) {
+            isTopExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw top edge if external
+      if (isTopExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x, segment.y);
+        ctx.lineTo(segment.x + segment.width, segment.y);
+        ctx.stroke();
+      }
+
+      // Check right edge
+      let isRightExternal = true;
+      for (let j = 0; j < segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = segments[j];
+          if (
+            segment.x + segment.width === otherSegment.x && // Segment is to the left of other segment
+            segment.y < otherSegment.y + otherSegment.height && // Segments overlap vertically
+            segment.y + segment.height > otherSegment.y
+          ) {
+            isRightExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw right edge if external
+      if (isRightExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x + segment.width, segment.y);
+        ctx.lineTo(segment.x + segment.width, segment.y + segment.height);
+        ctx.stroke();
+      }
+
+      // Check bottom edge
+      let isBottomExternal = true;
+      for (let j = 0; j < segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = segments[j];
+          if (
+            segment.y + segment.height === otherSegment.y && // Segment is above other segment
+            segment.x < otherSegment.x + otherSegment.width && // Segments overlap horizontally
+            segment.x + segment.width > otherSegment.x
+          ) {
+            isBottomExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw bottom edge if external
+      if (isBottomExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x + segment.width, segment.y + segment.height);
+        ctx.lineTo(segment.x, segment.y + segment.height);
+        ctx.stroke();
+      }
+
+      // Check left edge
+      let isLeftExternal = true;
+      for (let j = 0; j < segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = segments[j];
+          if (
+            segment.x === otherSegment.x + otherSegment.width && // Segment is to the right of other segment
+            segment.y < otherSegment.y + otherSegment.height && // Segments overlap vertically
+            segment.y + segment.height > otherSegment.y
+          ) {
+            isLeftExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw left edge if external
+      if (isLeftExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x, segment.y + segment.height);
+        ctx.lineTo(segment.x, segment.y);
+        ctx.stroke();
+      }
+    }
+  }
+
+  // Draw a shape (collection of connected worktop segments)
+  function drawShape(shape) {
+    // First, fill all segments with the same color
+    ctx.fillStyle = "rgba(52, 152, 219, 0.5)";
+
+    // Draw each segment in the shape (fill only)
+    for (let i = 0; i < shape.segments.length; i++) {
+      const segment = shape.segments[i];
+      ctx.fillRect(segment.x, segment.y, segment.width, segment.height);
+    }
+
+    // Now draw only the outer border of the entire shape
+    ctx.strokeStyle = "#3498db";
+    ctx.lineWidth = 2;
+
+    // We need to determine which edges are external edges
+    // For each segment, check if each edge is an external edge
+    for (let i = 0; i < shape.segments.length; i++) {
+      const segment = shape.segments[i];
+
+      // Check top edge
+      let isTopExternal = true;
+      for (let j = 0; j < shape.segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = shape.segments[j];
+          if (
+            segment.y === otherSegment.y + otherSegment.height && // Segment is below other segment
+            segment.x < otherSegment.x + otherSegment.width && // Segments overlap horizontally
+            segment.x + segment.width > otherSegment.x
+          ) {
+            isTopExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw top edge if external
+      if (isTopExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x, segment.y);
+        ctx.lineTo(segment.x + segment.width, segment.y);
+        ctx.stroke();
+      }
+
+      // Check right edge
+      let isRightExternal = true;
+      for (let j = 0; j < shape.segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = shape.segments[j];
+          if (
+            segment.x + segment.width === otherSegment.x && // Segment is to the left of other segment
+            segment.y < otherSegment.y + otherSegment.height && // Segments overlap vertically
+            segment.y + segment.height > otherSegment.y
+          ) {
+            isRightExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw right edge if external
+      if (isRightExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x + segment.width, segment.y);
+        ctx.lineTo(segment.x + segment.width, segment.y + segment.height);
+        ctx.stroke();
+      }
+
+      // Check bottom edge
+      let isBottomExternal = true;
+      for (let j = 0; j < shape.segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = shape.segments[j];
+          if (
+            segment.y + segment.height === otherSegment.y && // Segment is above other segment
+            segment.x < otherSegment.x + otherSegment.width && // Segments overlap horizontally
+            segment.x + segment.width > otherSegment.x
+          ) {
+            isBottomExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw bottom edge if external
+      if (isBottomExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x + segment.width, segment.y + segment.height);
+        ctx.lineTo(segment.x, segment.y + segment.height);
+        ctx.stroke();
+      }
+
+      // Check left edge
+      let isLeftExternal = true;
+      for (let j = 0; j < shape.segments.length; j++) {
+        if (i !== j) {
+          const otherSegment = shape.segments[j];
+          if (
+            segment.x === otherSegment.x + otherSegment.width && // Segment is to the right of other segment
+            segment.y < otherSegment.y + otherSegment.height && // Segments overlap vertically
+            segment.y + segment.height > otherSegment.y
+          ) {
+            isLeftExternal = false;
+            break;
+          }
+        }
+      }
+
+      // Draw left edge if external
+      if (isLeftExternal) {
+        ctx.beginPath();
+        ctx.moveTo(segment.x, segment.y + segment.height);
+        ctx.lineTo(segment.x, segment.y);
+        ctx.stroke();
+      }
+    }
+
+    // Draw join points and lines if in division mode
+    if (state.divisionMode) {
+      // First draw potential join line when hovering (if we have mouse position)
+      if (state.lastMousePosition && !state.isDrawing) {
+        const { x, y } = state.lastMousePosition;
+
+        // Check if mouse is over any segment
+        for (const segment of shape.segments) {
+          if (
+            x >= segment.x &&
+            x <= segment.x + segment.width &&
+            y >= segment.y &&
+            y <= segment.y + segment.height
+          ) {
+            // Draw a dashed line to indicate potential join
+            ctx.beginPath();
+            ctx.setLineDash([5, 5]);
+            ctx.strokeStyle = "rgba(231, 76, 60, 0.7)";
+            ctx.lineWidth = 2;
+
+            if (segment.direction === "horizontal") {
+              // For horizontal segments, draw vertical join line
+              ctx.moveTo(x, segment.y);
+              ctx.lineTo(x, segment.y + segment.height);
+            } else {
+              // For vertical segments, draw horizontal join line
+              ctx.moveTo(segment.x, y);
+              ctx.lineTo(segment.x + segment.width, y);
+            }
+
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset dash pattern
+            break;
+          }
+        }
+      }
+
+      // Draw existing join points and lines
+      for (const joinPoint of shape.joinPoints) {
+        // Find which segment this join point is on
+        for (const segment of shape.segments) {
+          if (
+            joinPoint.x >= segment.x &&
+            joinPoint.x <= segment.x + segment.width &&
+            joinPoint.y >= segment.y &&
+            joinPoint.y <= segment.y + segment.height
+          ) {
+            // Draw the join line
+            ctx.beginPath();
+            ctx.strokeStyle = "#c0392b";
+            ctx.lineWidth = 2;
+
+            if (segment.direction === "horizontal") {
+              // For horizontal segments, draw vertical join line
+              ctx.moveTo(joinPoint.x, segment.y);
+              ctx.lineTo(joinPoint.x, segment.y + segment.height);
+            } else {
+              // For vertical segments, draw horizontal join line
+              ctx.moveTo(segment.x, joinPoint.y);
+              ctx.lineTo(segment.x + segment.width, joinPoint.y);
+            }
+
+            ctx.stroke();
+            break;
+          }
+        }
+
+        // Draw the join point
+        ctx.beginPath();
+        ctx.arc(joinPoint.x, joinPoint.y, 8, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(231, 76, 60, 0.7)"; // Red dot for join points
+        ctx.fill();
+        ctx.strokeStyle = "#c0392b";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    }
+
+    // Draw measurements for the entire shape
+    if (shape.segments.length > 0) {
+      // Find the topmost segment for placing the measurement
+      let topSegment = shape.segments[0];
+      for (const segment of shape.segments) {
+        if (segment.y < topSegment.y) {
+          topSegment = segment;
+        }
+      }
+
+      // Calculate total length of the shape
+      let totalLength = 0;
+      for (const segment of shape.segments) {
+        if (segment.direction === "horizontal") {
+          totalLength += Math.round(segment.width * state.pixelsToMm);
+        } else {
+          totalLength += Math.round(segment.height * state.pixelsToMm);
+        }
+      }
+
+      // Draw the total length at the top of the shape
+      ctx.font = "14px Arial";
+      ctx.fillStyle = "#2980b9";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "bottom";
+
+      // Add a background for better visibility
+      const textWidth = ctx.measureText(`Total: ${totalLength}mm`).width;
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.fillRect(
+        topSegment.x + topSegment.width / 2 - textWidth / 2 - 5,
+        topSegment.y - 25,
+        textWidth + 10,
+        20
+      );
+
+      ctx.fillStyle = "#2980b9";
+      ctx.fillText(
+        `Total: ${totalLength}mm`,
+        topSegment.x + topSegment.width / 2,
+        topSegment.y - 10
+      );
+    }
+  }
+
   // Draw a worktop rectangle
   function drawWorktop(worktop, isPreview = false) {
     // Fill the rectangle with a semi-transparent color
@@ -287,7 +766,13 @@ document.addEventListener("DOMContentLoaded", function () {
     // Add measurements to the edges (for both final and preview worktops)
     // Use different styling for preview measurements
     ctx.font = "12px Arial";
-    ctx.fillStyle = isPreview ? "rgba(44, 62, 80, 0.6)" : "#2c3e50"; // Lighter color for preview
+
+    // Only make measurements clickable for final worktops (not previews)
+    if (!isPreview) {
+      ctx.fillStyle = "#2980b9"; // Blue color for clickable measurements
+    } else {
+      ctx.fillStyle = "rgba(44, 62, 80, 0.6)"; // Lighter color for preview
+    }
 
     if (worktop.direction === "horizontal") {
       // For horizontal worktops, show length on the top edge
@@ -296,6 +781,20 @@ document.addEventListener("DOMContentLoaded", function () {
       // Draw measurement on top edge
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
+
+      // Add a background for the measurement text to make it more visible
+      if (!isPreview) {
+        const textWidth = ctx.measureText(`${lengthMm}mm`).width;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        ctx.fillRect(
+          worktop.x + worktop.width / 2 - textWidth / 2 - 3,
+          worktop.y - 20,
+          textWidth + 6,
+          15
+        );
+        ctx.fillStyle = "#2980b9"; // Blue color for clickable measurements
+      }
+
       ctx.fillText(
         `${lengthMm}mm`,
         worktop.x + worktop.width / 2,
@@ -323,6 +822,15 @@ document.addEventListener("DOMContentLoaded", function () {
       ctx.rotate(-Math.PI / 2);
       ctx.textAlign = "center";
       ctx.textBaseline = "bottom";
+
+      // Add a background for the measurement text to make it more visible
+      if (!isPreview) {
+        const textWidth = ctx.measureText(`${lengthMm}mm`).width;
+        ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+        ctx.fillRect(-textWidth / 2 - 3, -15, textWidth + 6, 15);
+        ctx.fillStyle = "#2980b9"; // Blue color for clickable measurements
+      }
+
       ctx.fillText(`${lengthMm}mm`, 0, 0);
       ctx.restore();
 
@@ -358,11 +866,32 @@ document.addEventListener("DOMContentLoaded", function () {
   document
     .getElementById("toggle-snap")
     .addEventListener("click", toggleGridSnap);
+  document
+    .getElementById("toggle-division")
+    .addEventListener("click", toggleDivisionMode);
 
   // Canvas event listeners
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mousemove", handleMouseMove);
   canvas.addEventListener("mouseup", handleMouseUp);
+  canvas.addEventListener("click", handleCanvasClick);
+
+  // Worktop list click event
+  document
+    .getElementById("worktop-list")
+    .addEventListener("click", handleWorktopListClick);
+
+  // Modal event listeners
+  closeButton.addEventListener("click", closeModal);
+  saveButton.addEventListener("click", saveWorktopDimensions);
+  cancelButton.addEventListener("click", closeModal);
+
+  // Close modal when clicking outside
+  window.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
 
   // Reset the drawing state
   function resetDrawingState() {
@@ -450,15 +979,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Handle mouse move - update the preview
   function handleMouseMove(e) {
+    const { x, y } = getMouseCoordinates(e);
+
+    // Always update the last mouse position
+    state.lastMousePosition = { x, y };
+
+    // If in division mode, redraw to show hover effect
+    if (state.divisionMode && !state.isDrawing) {
+      redrawCanvas();
+    }
+
     // If we're not in drawing mode or not dragging, return
     if (!state.isDrawing || !state.isDragging) {
       return;
     }
-
-    const { x, y } = getMouseCoordinates(e);
-
-    // Update the last mouse position
-    state.lastMousePosition = { x, y };
 
     // If direction isn't set yet, detect initial direction
     if (!state.detectedDirection) {
@@ -625,43 +1159,29 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    // Convert all segments to worktops and add them to the worktops array
+    // Check if we have any valid segments
+    let hasValidSegments = false;
     for (const segment of state.currentSegments) {
-      // Only add segments that have a minimum length
       const length = Math.sqrt(
         Math.pow(segment.end.x - segment.start.x, 2) +
           Math.pow(segment.end.y - segment.start.y, 2)
       );
 
       if (length > 10) {
-        // Create a worktop from the segment with corner adjustments
-        // Keep the isPrevious and isCurrent flags for proper corner handling
-        const worktop = createWorktopFromSegment(segment);
-
-        // Assign the next available letter as the label
-        worktop.label = state.nextWorktopLabel;
-
-        // Increment the label for the next worktop
-        // If we reach 'Z', wrap around to 'AA', 'AB', etc.
-        if (state.nextWorktopLabel === "Z") {
-          state.nextWorktopLabel = "AA";
-        } else if (
-          state.nextWorktopLabel.length > 1 &&
-          state.nextWorktopLabel[1] === "Z"
-        ) {
-          state.nextWorktopLabel =
-            String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1) + "A";
-        } else {
-          state.nextWorktopLabel =
-            state.nextWorktopLabel.length === 1
-              ? String.fromCharCode(state.nextWorktopLabel.charCodeAt(0) + 1)
-              : state.nextWorktopLabel[0] +
-                String.fromCharCode(state.nextWorktopLabel.charCodeAt(1) + 1);
-        }
-
-        // Add it to the collection
-        state.worktops.push(worktop);
+        hasValidSegments = true;
+        break;
       }
+    }
+
+    if (hasValidSegments) {
+      // Create a shape from all the segments
+      const shape = createShapeFromSegments(state.currentSegments);
+
+      // Add the shape to the collection
+      state.shapes.push(shape);
+
+      // Update the division mode button visibility
+      updateDivisionModeButton();
     }
 
     // If we didn't create any segments (just a click), create a point
@@ -753,12 +1273,221 @@ document.addEventListener("DOMContentLoaded", function () {
   // Clear the canvas
   function clearCanvas() {
     state.worktops = [];
+    state.shapes = [];
     state.nextWorktopLabel = "A"; // Reset the label counter
+    state.divisionMode = false;
     resetDrawingState();
 
     // Clear the worktop list
     const worktopListElement = document.getElementById("worktop-list");
     worktopListElement.innerHTML = "";
+
+    // Update the division mode button visibility
+    updateDivisionModeButton();
+  }
+
+  // Handle clicks on the canvas to detect worktop measurements or add join points
+  function handleCanvasClick(e) {
+    if (state.isDrawing) return; // Don't handle clicks during drawing
+
+    const { x, y } = getMouseCoordinates(e);
+
+    // If in division mode, handle adding join points
+    if (state.divisionMode) {
+      // Check if we clicked on a shape
+      for (let i = 0; i < state.shapes.length; i++) {
+        const shape = state.shapes[i];
+
+        // Check if click is on any segment of the shape
+        for (const segment of shape.segments) {
+          if (
+            x >= segment.x &&
+            x <= segment.x + segment.width &&
+            y >= segment.y &&
+            y <= segment.y + segment.height
+          ) {
+            // Add a join point at the click location
+            shape.joinPoints.push({ x, y });
+
+            // Redraw the canvas to show the new join point
+            redrawCanvas();
+            return;
+          }
+        }
+      }
+      return;
+    }
+
+    // Legacy: Check if we clicked on a worktop measurement
+    for (let i = 0; i < state.worktops.length; i++) {
+      const worktop = state.worktops[i];
+
+      // Check if click is near the length measurement
+      if (isClickNearLengthMeasurement(x, y, worktop)) {
+        openEditModal(i);
+        return;
+      }
+    }
+
+    // Check if we clicked on a shape measurement
+    for (let i = 0; i < state.shapes.length; i++) {
+      const shape = state.shapes[i];
+
+      // For now, just check if we clicked near the top of the first segment
+      if (shape.segments.length > 0) {
+        const segment = shape.segments[0];
+
+        // Check if click is near the top measurement
+        if (
+          x >= segment.x &&
+          x <= segment.x + segment.width &&
+          y >= segment.y - 30 &&
+          y <= segment.y - 5
+        ) {
+          // In the future, we could open a modal to edit the entire shape
+          alert("Shape editing will be implemented in a future update.");
+          return;
+        }
+      }
+    }
+  }
+
+  // Check if a click is near a worktop's length measurement
+  function isClickNearLengthMeasurement(x, y, worktop) {
+    // For horizontal worktops, check if click is above the worktop
+    if (worktop.direction === "horizontal") {
+      return (
+        x >= worktop.x &&
+        x <= worktop.x + worktop.width &&
+        y >= worktop.y - 25 &&
+        y <= worktop.y
+      );
+    } else {
+      // For vertical worktops, check if click is to the left of the worktop
+      return (
+        y >= worktop.y &&
+        y <= worktop.y + worktop.height &&
+        x >= worktop.x - 25 &&
+        x <= worktop.x
+      );
+    }
+  }
+
+  // Handle clicks on the worktop list
+  function handleWorktopListClick(e) {
+    if (e.target.tagName === "P") {
+      // Extract the worktop label from the text (e.g., "A: 1200 x 600mm")
+      const label = e.target.textContent.split(":")[0];
+
+      // Find the worktop with this label
+      const worktopIndex = state.worktops.findIndex((w) => w.label === label);
+
+      if (worktopIndex !== -1) {
+        openEditModal(worktopIndex);
+      }
+    }
+  }
+
+  // Open the edit modal for a specific worktop
+  function openEditModal(worktopIndex) {
+    editingWorktopIndex = worktopIndex;
+    const worktop = state.worktops[worktopIndex];
+
+    // Calculate dimensions in millimeters
+    let length;
+    if (worktop.direction === "horizontal") {
+      length = Math.round(worktop.width * state.pixelsToMm);
+    } else {
+      length = Math.round(worktop.height * state.pixelsToMm);
+    }
+
+    // Set the input values
+    lengthInput.value = length;
+    widthInput.value = 600; // Fixed width for now
+
+    // Show the modal
+    modal.classList.add("show");
+  }
+
+  // Close the edit modal
+  function closeModal() {
+    modal.classList.remove("show");
+    editingWorktopIndex = -1;
+  }
+
+  // Save the worktop dimensions
+  function saveWorktopDimensions() {
+    if (editingWorktopIndex === -1) return;
+
+    const worktop = state.worktops[editingWorktopIndex];
+    const newLength = parseInt(lengthInput.value);
+    const newWidth = parseInt(widthInput.value);
+
+    // Validate inputs
+    if (isNaN(newLength) || newLength < 100) {
+      alert("Please enter a valid length (minimum 100mm)");
+      return;
+    }
+
+    if (isNaN(newWidth) || newWidth < 100) {
+      alert("Please enter a valid width (minimum 100mm)");
+      return;
+    }
+
+    // Convert mm to pixels
+    const newLengthPx = newLength / state.pixelsToMm;
+    const newWidthPx = newWidth / state.pixelsToMm;
+
+    // Update the worktop dimensions
+    if (worktop.direction === "horizontal") {
+      // For horizontal worktops, update width (which is the length)
+      const oldWidth = worktop.width;
+      worktop.width = newLengthPx;
+
+      // If this is not the first worktop, we need to update the next worktop's position
+      if (editingWorktopIndex < state.worktops.length - 1) {
+        const nextWorktop = state.worktops[editingWorktopIndex + 1];
+        if (
+          nextWorktop.direction === "vertical" &&
+          Math.abs(nextWorktop.x - (worktop.x + oldWidth)) < 5
+        ) {
+          // This is a connected worktop, update its position
+          nextWorktop.x = worktop.x + worktop.width;
+        }
+      }
+
+      // Update the worktop height (width in real-world terms)
+      worktop.height = newWidthPx;
+      // Center the worktop on the original line
+      worktop.y = worktop.start.y - newWidthPx / 2;
+    } else {
+      // For vertical worktops, update height (which is the length)
+      const oldHeight = worktop.height;
+      worktop.height = newLengthPx;
+
+      // If this is not the first worktop, we need to update the next worktop's position
+      if (editingWorktopIndex < state.worktops.length - 1) {
+        const nextWorktop = state.worktops[editingWorktopIndex + 1];
+        if (
+          nextWorktop.direction === "horizontal" &&
+          Math.abs(nextWorktop.y - (worktop.y + oldHeight)) < 5
+        ) {
+          // This is a connected worktop, update its position
+          nextWorktop.y = worktop.y + worktop.height;
+        }
+      }
+
+      // Update the worktop width (width in real-world terms)
+      worktop.width = newWidthPx;
+      // Center the worktop on the original line
+      worktop.x = worktop.start.x - newWidthPx / 2;
+    }
+
+    // Close the modal
+    closeModal();
+
+    // Redraw the canvas
+    redrawCanvas();
   }
 
   // Set initial mode to smart

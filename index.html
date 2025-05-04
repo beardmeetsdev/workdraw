@@ -14,6 +14,9 @@
           <button id="smart" class="active">Smart Line</button>
           <button id="clear">Clear</button>
           <button id="toggle-snap" class="active">Grid Snap: ON</button>
+          <button id="toggle-division" style="display: none">
+            Division Mode
+          </button>
         </div>
       </div>
       <div class="canvas-container">
@@ -53,6 +56,32 @@
           <div id="worktop-list">
             <!-- Worktop list will be populated here -->
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal for editing worktop dimensions -->
+    <div id="edit-modal" class="modal">
+      <div class="modal-content">
+        <span class="close-button">&times;</span>
+        <h2>Edit Worktop Dimensions</h2>
+        <div class="form-group">
+          <label for="worktop-length">Length (mm):</label>
+          <input type="number" id="worktop-length" min="100" step="10" />
+        </div>
+        <div class="form-group">
+          <label for="worktop-width">Width (mm):</label>
+          <input
+            type="number"
+            id="worktop-width"
+            min="100"
+            step="10"
+            value="600"
+          />
+        </div>
+        <div class="modal-buttons">
+          <button id="save-dimensions">Save</button>
+          <button id="cancel-edit">Cancel</button>
         </div>
       </div>
     </div>

@@ -1080,7 +1080,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Create edge object with coordinates and properties
   function createEdge(worktop, side) {
-    // If the worktop has the new edges structure, use the adjusted coordinates
+    // All worktops should have the edges structure, but check just in case
     if (worktop.edges && worktop.edges[side]) {
       const edge = worktop.edges[side];
       const { x1, y1, x2, y2 } = edge.adjusted;
@@ -1125,7 +1125,10 @@ document.addEventListener("DOMContentLoaded", function () {
       };
     }
 
-    // Fall back to the old method if edges structure is not available
+    // This is a fallback for backward compatibility
+    // All new worktops should have the edges structure
+    console.warn(`Worktop missing edges structure for side: ${side}`);
+
     let x1, y1, x2, y2, direction, length;
     let corner1, corner2;
 

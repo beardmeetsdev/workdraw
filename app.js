@@ -1288,47 +1288,7 @@ document.addEventListener("DOMContentLoaded", function () {
       return;
     }
 
-    // Add the outline measurements section
-    if (state.outlineMeasurements && state.outlineMeasurements.length > 0) {
-      // Create a container for the outline measurements
-      const outlineMeasurementsElement = document.createElement("div");
-      outlineMeasurementsElement.className = "outline-measurements-detail";
-
-      // Add a header
-      const outlineHeader = document.createElement("h4");
-      outlineHeader.textContent = "Outline Measurements";
-      outlineMeasurementsElement.appendChild(outlineHeader);
-
-      // Add each outline segment
-      const outlineMeasurementsContainer = document.createElement("div");
-      outlineMeasurementsContainer.className = "outline-measurements-container";
-
-      // Number the segments sequentially
-      let segmentNumber = 1;
-
-      for (const segment of state.outlineMeasurements) {
-        const segmentDetail = document.createElement("p");
-        segmentDetail.className = "outline-segment-detail";
-
-        // Format: "1. 2400mm (horizontal) from (300,120) to (780,120)"
-        const startX = Math.round(segment.start.x);
-        const startY = Math.round(segment.start.y);
-        const endX = Math.round(segment.end.x);
-        const endY = Math.round(segment.end.y);
-
-        segmentDetail.textContent = `${segmentNumber}. ${segment.lengthMm}mm (${segment.direction}) from (${startX},${startY}) to (${endX},${endY})`;
-
-        outlineMeasurementsContainer.appendChild(segmentDetail);
-        segmentNumber++;
-      }
-
-      outlineMeasurementsElement.appendChild(outlineMeasurementsContainer);
-      worktopDetailsElement.appendChild(outlineMeasurementsElement);
-
-      // Add a separator
-      const separator = document.createElement("hr");
-      worktopDetailsElement.appendChild(separator);
-    }
+    // Outline measurements section has been removed
 
     // Add each worktop to the details panel
     for (const worktop of state.worktops) {
@@ -1417,16 +1377,6 @@ document.addEventListener("DOMContentLoaded", function () {
             adjustedLength * state.pixelsToMm
           );
 
-          // Format the edge details
-          let edgeText = `${edge.toUpperCase()}: `;
-
-          // Add original coordinates and length
-          edgeText += `Original: (${Math.round(original.x1)},${Math.round(
-            original.y1
-          )}) to (${Math.round(original.x2)},${Math.round(
-            original.y2
-          )}) - ${originalLengthMm}mm`;
-
           // Check if adjusted coordinates are different from original
           const isDifferent =
             Math.abs(original.x1 - adjusted.x1) > 0.5 ||
@@ -1434,14 +1384,16 @@ document.addEventListener("DOMContentLoaded", function () {
             Math.abs(original.x2 - adjusted.x2) > 0.5 ||
             Math.abs(original.y2 - adjusted.y2) > 0.5;
 
-          // Add adjusted coordinates and length if they're different
+          // Format the edge details - show the most relevant measurement
+          let edgeText = `${edge.toUpperCase()}: `;
+
           if (isDifferent) {
-            edgeText += `\nAdjusted: (${Math.round(adjusted.x1)},${Math.round(
-              adjusted.y1
-            )}) to (${Math.round(adjusted.x2)},${Math.round(
-              adjusted.y2
-            )}) - ${adjustedLengthMm}mm`;
+            // If adjusted, show both with adjusted highlighted
+            edgeText += `${originalLengthMm}mm → ${adjustedLengthMm}mm`;
             edgeDetail.style.color = "#e74c3c"; // Highlight adjusted edges in red
+          } else {
+            // If not adjusted, just show the original
+            edgeText += `${originalLengthMm}mm`;
           }
 
           edgeDetail.textContent = edgeText;
@@ -1540,8 +1492,6 @@ document.addEventListener("DOMContentLoaded", function () {
       worktopDetailsElement.appendChild(worktopElement);
     }
   }
-
-  // Outline measurement functions have been removed
 
   // Function to adjust edge coordinates based on connections
   function adjustEdgeCoordinates(worktop, edge) {

@@ -14,39 +14,18 @@
           <button id="smart" class="active">Smart Line</button>
           <button id="clear">Clear</button>
           <button id="toggle-snap" class="active">Grid Snap: ON</button>
+          <button id="debug-measurements">Debug Measurements</button>
         </div>
       </div>
       <div class="canvas-container">
         <canvas id="canvas"></canvas>
       </div>
       <div class="info-container">
-        <div class="info-panel">
-          <h3>Instructions</h3>
-          <p>
-            1. <strong>Press and hold</strong> the mouse button to start drawing
-          </p>
-          <p>
-            2. Move mouse to determine line direction (horizontal or vertical)
-          </p>
-          <p>
-            3. Continue moving in different directions to create corners
-            automatically
-          </p>
-          <p>
-            4. The line will change direction when you move significantly in the
-            perpendicular direction
-          </p>
-          <p>
-            5. <strong>Release</strong> the mouse button to complete the entire
-            shape
-          </p>
-          <p>
-            6. Each line segment becomes a worktop with a fixed width of 600mm
-          </p>
-          <p>
-            7. Connected segments create connected worktops that maintain their
-            relationship
-          </p>
+        <div class="worktop-details-panel">
+          <h3>Worktop Details</h3>
+          <div id="worktop-details">
+            <!-- Worktop details will be populated here -->
+          </div>
         </div>
         <div class="worktop-list-panel">
           <h3>Worktop List</h3>

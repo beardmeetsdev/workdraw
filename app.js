@@ -323,7 +323,8 @@ document.addEventListener("DOMContentLoaded", function () {
           connectionLabel: null,
         },
       },
-      // Keep the old connections structure for backward compatibility
+      // Keep the connections structure for UI display in updateWorktopDetails
+      // This is used to show connection information in the worktop details panel
       connections: {
         left: {
           connectedTo: null,

@@ -10,7 +10,8 @@ import { initApp } from "./js/main.js";
 // Initialize the application when the DOM is ready
 document.addEventListener("DOMContentLoaded", initApp);
 
-// Legacy code below - to be removed once modular version is fully tested
+// Legacy code below - disabled for testing modular version
+/*
 document.addEventListener("DOMContentLoaded", function () {
   // Get the canvas element and its context
   const canvas = document.getElementById("canvas");
@@ -1971,3 +1972,4 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 });
+*/

@@ -463,10 +463,8 @@ document.addEventListener("DOMContentLoaded", function () {
       : "rgba(52, 152, 219, 0.5)";
     ctx.fillRect(worktop.x, worktop.y, worktop.width, worktop.height);
 
-    // Draw the border
-    ctx.strokeStyle = "#3498db";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(worktop.x, worktop.y, worktop.width, worktop.height);
+    // Don't draw any borders - this will completely hide all join lines
+    // The shape will be defined by the fill color only
 
     // Add label only if not in preview mode
     if (!isPreview && worktop.label) {

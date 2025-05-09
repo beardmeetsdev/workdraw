@@ -3,9 +3,9 @@
  * Handles worktop creation, rendering, and management
  */
 
-import { state } from './state.js';
-import { getContext } from './canvas.js';
-import { logMeasurement } from './utils.js';
+import { state } from "./state.js";
+import { getContext } from "./canvas.js";
+import { logMeasurement } from "./utils.js";
 
 /**
  * Create a worktop rectangle from a line segment
@@ -13,7 +13,8 @@ import { logMeasurement } from './utils.js';
  * @returns {Object} - The worktop object
  */
 function createWorktopFromSegment(segment) {
-  const { start, end, direction, isPrevious, isCurrent, isFirstSegment } = segment;
+  const { start, end, direction, isPrevious, isCurrent, isFirstSegment } =
+    segment;
   const width = state.worktopWidth;
   const halfWidth = width / 2;
 
@@ -204,10 +205,8 @@ function drawWorktop(worktop, isPreview = false) {
     : "rgba(52, 152, 219, 0.5)";
   ctx.fillRect(worktop.x, worktop.y, worktop.width, worktop.height);
 
-  // Draw the border
-  ctx.strokeStyle = "#3498db";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(worktop.x, worktop.y, worktop.width, worktop.height);
+  // Don't draw any borders - this will completely hide all join lines
+  // The shape will be defined by the fill color only
 
   // Add label only if not in preview mode
   if (!isPreview && worktop.label) {
@@ -286,19 +285,11 @@ function drawWorktopMeasurements(worktop, isPreview = false) {
           // Calculate original and adjusted lengths for comparison
           let originalLengthPx, adjustedLengthPx;
           if (edge === "top" || edge === "bottom") {
-            originalLengthPx = Math.abs(
-              originalCoords.x2 - originalCoords.x1
-            );
-            adjustedLengthPx = Math.abs(
-              adjustedCoords.x2 - adjustedCoords.x1
-            );
+            originalLengthPx = Math.abs(originalCoords.x2 - originalCoords.x1);
+            adjustedLengthPx = Math.abs(adjustedCoords.x2 - adjustedCoords.x1);
           } else {
-            originalLengthPx = Math.abs(
-              originalCoords.y2 - originalCoords.y1
-            );
-            adjustedLengthPx = Math.abs(
-              adjustedCoords.y2 - adjustedCoords.y1
-            );
+            originalLengthPx = Math.abs(originalCoords.y2 - originalCoords.y1);
+            adjustedLengthPx = Math.abs(adjustedCoords.y2 - adjustedCoords.y1);
           }
 
           const originalLengthMm = Math.round(
@@ -329,7 +320,9 @@ function drawWorktopMeasurements(worktop, isPreview = false) {
           );
 
           // Position the text based on the edge
-          let textX, textY, rotation = 0;
+          let textX,
+            textY,
+            rotation = 0;
 
           switch (edge) {
             case "top":
@@ -479,7 +472,4 @@ function drawWorktopMeasurements(worktop, isPreview = false) {
 }
 
 // Export the worktop functions
-export {
-  createWorktopFromSegment,
-  drawWorktop
-};
+export { createWorktopFromSegment, drawWorktop };

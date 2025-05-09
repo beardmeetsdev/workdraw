@@ -3,11 +3,11 @@
  * Handles UI interactions and updates
  */
 
-import { state, resetDrawingState } from './state.js';
-import { getCanvas, getContext, drawPoint, redrawCanvas } from './canvas.js';
-import { getMouseCoordinates, getCornerCoordinates } from './utils.js';
-import { createWorktopFromSegment, drawWorktop } from './worktops.js';
-import { detectWorktopConnections } from './connections.js';
+import { state, resetDrawingState } from "./state.js";
+import { getCanvas, getContext, drawPoint, redrawCanvas } from "./canvas.js";
+import { getMouseCoordinates, getCornerCoordinates } from "./utils.js";
+import { createWorktopFromSegment, drawWorktop } from "./worktops.js";
+import { detectWorktopConnections } from "./connections.js";
 
 /**
  * Update the worktop list in the UI
@@ -133,12 +133,8 @@ function updateWorktopDetails() {
         }
 
         // Convert to mm
-        const originalLengthMm = Math.round(
-          originalLength * state.pixelsToMm
-        );
-        const adjustedLengthMm = Math.round(
-          adjustedLength * state.pixelsToMm
-        );
+        const originalLengthMm = Math.round(originalLength * state.pixelsToMm);
+        const adjustedLengthMm = Math.round(adjustedLength * state.pixelsToMm);
 
         // Check if adjusted coordinates are different from original
         const isDifferent =
@@ -149,7 +145,7 @@ function updateWorktopDetails() {
 
         // Format the edge details - show the most relevant measurement
         let edgeText = `${edge.toUpperCase()}: `;
-        
+
         if (isDifferent) {
           // If adjusted, show both with adjusted highlighted
           edgeText += `${originalLengthMm}mm → ${adjustedLengthMm}mm`;
@@ -306,7 +302,7 @@ function clearCanvas() {
  */
 function handleMouseDown(e) {
   const canvas = getCanvas();
-  
+
   // Reset the current drawing state
   state.isDragging = true;
   state.isDrawing = true;
@@ -340,7 +336,7 @@ function handleMouseDown(e) {
  */
 function handleMouseMove(e) {
   const canvas = getCanvas();
-  
+
   // If we're not in drawing mode or not dragging, return
   if (!state.isDrawing || !state.isDragging) {
     return;
@@ -460,7 +456,7 @@ function handleMouseMove(e) {
  */
 function handleMouseUp(e) {
   const canvas = getCanvas();
-  
+
   if (!state.isDrawing || !state.isDragging) return;
 
   state.isDragging = false;
@@ -508,9 +504,7 @@ function handleMouseUp(e) {
   if (state.currentSegments.length > 0) {
     // Mark the last segment as current if not already marked
     if (!state.currentSegments[state.currentSegments.length - 1].isCurrent) {
-      state.currentSegments[
-        state.currentSegments.length - 1
-      ].isCurrent = true;
+      state.currentSegments[state.currentSegments.length - 1].isCurrent = true;
     }
 
     // Mark all other segments as previous if not already marked
@@ -586,7 +580,7 @@ function handleMouseUp(e) {
  */
 function setupEventListeners() {
   const canvas = getCanvas();
-  
+
   // Canvas event listeners
   canvas.addEventListener("mousedown", handleMouseDown);
   canvas.addEventListener("mousemove", handleMouseMove);
@@ -594,18 +588,20 @@ function setupEventListeners() {
 
   // Button event listeners
   document.getElementById("clear").addEventListener("click", clearCanvas);
-  document.getElementById("toggle-snap").addEventListener("click", toggleGridSnap);
-  
+  document
+    .getElementById("toggle-snap")
+    .addEventListener("click", toggleGridSnap);
+
   // If debug measurements button exists, add event listener
   const debugButton = document.getElementById("debug-measurements");
   if (debugButton) {
-    const { showMeasurementLogs } = require('./utils.js');
+    const { showMeasurementLogs } = require("./utils.js");
     debugButton.addEventListener("click", showMeasurementLogs);
   }
-  
+
   // Window resize event
   window.addEventListener("resize", () => {
-    const { resizeCanvas } = require('./canvas.js');
+    const { resizeCanvas } = require("./canvas.js");
     resizeCanvas();
   });
 }
@@ -619,5 +615,5 @@ export {
   handleMouseDown,
   handleMouseMove,
   handleMouseUp,
-  setupEventListeners
+  setupEventListeners,
 };

@@ -9,22 +9,14 @@
   <body>
     <div class="container">
       <div class="toolbar">
-        <h1>Simple Line Drawing</h1>
-        <div class="tools">
-          <button id="smart" class="active">Smart Line</button>
-          <button id="clear">Clear</button>
-          <button id="toggle-snap" class="active">Grid Snap: ON</button>
-          <button id="debug-measurements">Debug Measurements</button>
-        </div>
-      </div>
-      <div class="canvas-container">
-        <canvas id="canvas"></canvas>
-      </div>
-      <div class="info-container">
-        <div class="worktop-details-panel">
-          <h3>Worktop Details</h3>
-          <div id="worktop-details">
-            <!-- Worktop details will be populated here -->
+        <div class="toolbar-left">
+          <h1>Simple Line Drawing</h1>
+          <div class="tools">
+            <button id="clear">Clear</button>
+            <button id="toggle-snap" class="active">Grid Snap: ON</button>
+            <button id="debug-measurements" style="display: none">
+              Debug Measurements
+            </button>
           </div>
         </div>
         <div class="worktop-list-panel">
@@ -34,6 +26,10 @@
           </div>
         </div>
       </div>
+      <div class="canvas-container">
+        <canvas id="canvas"></canvas>
+      </div>
+      <!-- info-container removed -->
     </div>
 
     <script type="module" src="app.js"></script>

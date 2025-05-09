@@ -3,10 +3,14 @@
  * Main entry point for the Workdraw application
  */
 
-import { state } from './state.js';
-import { initCanvas, redrawCanvas } from './canvas.js';
-import { setupEventListeners, updateWorktopList, updateWorktopDetails } from './ui.js';
-import { detectWorktopConnections } from './connections.js';
+import { state } from "./state.js";
+import { initCanvas, redrawCanvas } from "./canvas.js";
+import {
+  setupEventListeners,
+  updateWorktopList,
+  updateWorktopDetails,
+} from "./ui.js";
+import { detectWorktopConnections } from "./connections.js";
 
 /**
  * Initialize the application
@@ -15,16 +19,16 @@ function initApp() {
   // Initialize the canvas
   const canvas = document.getElementById("canvas");
   initCanvas(canvas);
-  
+
   // Set up event listeners
   setupEventListeners();
-  
+
   // Set initial mode to smart
   state.mode = "smart";
-  
+
   // Override updateWorktopList to also update connections and details
   const originalUpdateWorktopList = updateWorktopList;
-  window.updateWorktopList = function() {
+  window.updateWorktopList = function () {
     // Save current canvas dimensions
     const currentWidth = canvas.width;
     const currentHeight = canvas.height;
@@ -45,7 +49,7 @@ function initApp() {
       redrawCanvas();
     }
   };
-  
+
   // Initial draw
   redrawCanvas();
 }

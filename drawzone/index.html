@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DRAW ZONE</title>
+    <!-- Include Fabric.js from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+    <!-- Link to our stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <h1>DRAW ZONE</h1>
+          <div class="tools">
+            <button id="clear">Clear</button>
+            <button id="toggle-snap" class="active">Grid Snap: ON</button>
+          </div>
+        </div>
+        <div class="worktop-list-panel">
+          <h3>Worktop List</h3>
+          <div id="worktop-list">
+            <!-- Worktop list will be populated here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="canvas-container">
+          <!-- Canvas element for Fabric.js -->
+          <canvas id="canvas"></canvas>
+        </div>
+
+        <div class="directions-panel">
+          <h3>Worktop Directions</h3>
+          <div id="directions-list">
+            <!-- Directions will be populated here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="footer"></div>
+    </div>
+
+    <!-- Include our JavaScript module -->
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

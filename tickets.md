@@ -1,0 +1,42 @@
+# Workdraw Application Rebuild - Tickets
+
+- ~~1.1 Research Canvas Libraries & Approaches. Decision: Fabric.js.~~
+- ~~1.2 Decide on Core Drawing Technology. Decision: Fabric.js.~~
+- ~~1.3 Create `drawzone/index.html` with a canvas element and include Fabric.js library (e.g., via CDN).~~
+- ~~1.4 Create `drawzone/style.css` with basic styles for the page and canvas container.~~
+- ~~1.5 Create `drawzone/app.js` to initialize the Fabric.js canvas instance, targeting the HTML canvas element.~~
+- ~~1.6 Implement a function in `app.js` to draw a static grid on the Fabric canvas background.~~
+- ~~1.7 Ensure the Fabric canvas is responsive or has fixed, appropriate dimensions.~~
+- ~~1.8 Implement mouse controls for drawing a preview of a single straight Line using a temporary fabric.Line object.~~
+- ~~1.9 Implement smart direction detection (horizontal/vertical snapping) for the preview Line during mouse:move.~~
+- 1.10 Implement common Worktop Finalization Logic using centerline.
+- 1.11 Implement "Turn Detection" within mouse:move.
+- 1.12 Implement mouseup event handler.
+- 1.13 Test: Ensure the finalized Polygon for each Worktop matches the visual state of its preview Line.
+- 2.1 Context for Next Line: Use previous Worktop's endPoint and direction for the next preview Line.
+- 2.2 Visual Join for Active Preview: Preview Polygon for Worktop B must show proper join with Worktop A.
+- 2.3 Finalizing Connected Worktops: Create B's Polygon with visual join adjustments relative to A.
+- 2.4 Test: Ensure each finalized Worktop matches its preview state, including visual joins.
+- 3.1 Create UI panel in index.html for controls and lists.
+- 3.2 Implement "Clear Canvas" button to reset the canvas and state.
+- 3.3 Implement Worktop List Display.
+- 3.4 Implement Grid Snapping toggle button.
+- 4.1 Individual Worktop Edge Measurements with live display during preview and after finalization.
+- 4.2 Continuous Exterior Face Logic.
+- 4.3 Display Combined Exterior Measurements.
+- 5.1 Make displayed measurement fabric.Text objects interactive (detect clicks).
+- 5.2 On measurement click, prompt user for a new dimension.
+- 5.3 Single Worktop Resizing.
+- 5.4 Connected Worktop Adjustment (Propagation).
+- 5.5 After resizing, re-run measurement detection and update all measurement displays.
+- 6.1 UI for selecting a fabric.Polygon (a Worktop) on the canvas.
+- 6.2 UI for user to define a split Line across the selected Worktop.
+- 6.3 Implement function calculateSplitWorktopCorners.
+- 6.4 Update state.worktopsData: Remove original Worktop, add data for the two new pieces.
+- 6.5 Update Fabric Canvas: Remove original Polygon, create and add two new Polygons.
+- 6.6 Re-evaluate and update connections and measurements for the new and surrounding Worktops.
+- 7.1 Comprehensive testing of all drawing modes, connections, measurements, resizing, and splitting.
+- 7.2 Address and fix any identified bugs or visual inconsistencies.
+- 7.3 Performance review and optimization.
+- 7.4 Code cleanup, add comments, and finalize any internal documentation.
+- 7.5 Review and refine overall UI/UX.

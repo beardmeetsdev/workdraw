@@ -1,0 +1,149 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 20px;
+  overflow: hidden; /* Prevent scrolling */
+}
+
+.toolbar {
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  height: 120px; /* Fixed height for the toolbar */
+  overflow: hidden; /* Prevent overflow from affecting layout */
+}
+
+.toolbar-left {
+  flex: 1;
+}
+
+.toolbar h1 {
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+.tools {
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  padding: 8px 15px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #2980b9;
+}
+
+button.active {
+  background-color: #2c3e50;
+  font-weight: bold;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  height: calc(100vh - 180px); /* Viewport height minus header and margins */
+}
+
+.canvas-container {
+  flex: 1;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  min-height: 500px; /* Minimum height */
+}
+
+.directions-panel {
+  width: 200px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.directions-panel h3 {
+  margin: 0 0 10px 0;
+  color: #2c3e50;
+  font-size: 14px;
+  text-align: center;
+}
+
+#directions-list {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+#canvas {
+  background-color: white;
+  cursor: crosshair;
+  border: 1px solid #ddd;
+  width: 100%;
+  height: 100%;
+}
+
+.worktop-list-panel {
+  background-color: #f9f9f9;
+  padding: 10px;
+  border-radius: 4px;
+  width: 250px;
+  height: 90px; /* Fixed height to fit within toolbar */
+  overflow-y: auto; /* Vertical scrolling */
+  overflow-x: hidden; /* No horizontal scrolling */
+}
+
+.worktop-list-panel h3 {
+  margin: 0 0 8px 0;
+  color: #2c3e50;
+  font-size: 14px;
+}
+
+#worktop-list {
+  font-family: monospace;
+  font-size: 12px;
+}
+
+#worktop-list p {
+  margin-bottom: 3px;
+  padding: 3px;
+  border-bottom: 1px solid #eee;
+}
+
+.footer {
+  text-align: right;
+  padding: 10px;
+  color: #7f8c8d;
+  font-size: 12px;
+}

@@ -1,5 +1,5 @@
-import { resizeCanvas } from './resizeCanvas.js';
-import { createGrid } from './createGrid.js';
+import { resizeCanvas } from "./resizeCanvas.js";
+import { createGrid } from "./createGrid.js";
 
 /**
  * Set up UI event listeners
@@ -7,7 +7,7 @@ import { createGrid } from './createGrid.js';
 export function setupUIEvents(canvas) {
   // Get state from global scope
   const state = window.state;
-  
+
   // Toggle grid snap
   document.getElementById("toggle-snap").addEventListener("click", function () {
     state.snapToGrid = !state.snapToGrid;
@@ -52,9 +52,6 @@ export function setupUIEvents(canvas) {
       left: null,
       right: null,
     };
-
-    // Clear worktop list
-    document.getElementById("worktop-list").innerHTML = "";
 
     // Clear directions panel
     document.getElementById("directions-list").innerHTML = "";

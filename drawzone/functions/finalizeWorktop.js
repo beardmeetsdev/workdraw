@@ -1,5 +1,5 @@
-import { adjustWorktopCorners } from './adjustWorktopCorners.js';
-import { updateDirectionsPanel } from './updateDirectionsPanel.js';
+import { adjustWorktopCorners } from "./adjustWorktopCorners.js";
+import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
 
 /**
  * Finalize a worktop by saving it and keeping it on the canvas
@@ -10,10 +10,16 @@ import { updateDirectionsPanel } from './updateDirectionsPanel.js';
  * @param {Object} canvas - Fabric.js canvas instance
  * @returns {Object} The created worktop data
  */
-export function finalizeWorktop(start, end, direction, turnDirection = null, canvas) {
+export function finalizeWorktop(
+  start,
+  end,
+  direction,
+  turnDirection = null,
+  canvas
+) {
   // Get state from global scope
   const state = window.state;
-  
+
   const halfWidth = state.worktopWidth / 2;
 
   // Snap the end point to the detected direction
@@ -116,7 +122,7 @@ export function finalizeWorktop(start, end, direction, turnDirection = null, can
     );
     canvas.add(cornerLabel);
   });
-  
+
   // The moving direction is already encoded in the compass direction
   let movingDirection = direction; // N, S, E, W
 
@@ -272,14 +278,6 @@ export function finalizeWorktop(start, end, direction, turnDirection = null, can
 
   // Update next label (A, B, C, etc.)
   state.nextLabel = String.fromCharCode(state.nextLabel.charCodeAt(0) + 1);
-
-  // Add to worktop list in UI
-  const worktopList = document.getElementById("worktop-list");
-  const listItem = document.createElement("div");
-  listItem.textContent = `Worktop ${worktopData.label}: ${direction}${
-    turnDirection ? ` (${turnDirection})` : ""
-  }`;
-  worktopList.appendChild(listItem);
 
   // Update directions panel
   updateDirectionsPanel(worktopData);

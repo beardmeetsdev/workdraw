@@ -1,7 +1,7 @@
-import { snapToGrid } from './snapToGrid.js';
-import { updatePreviewWorktop } from './updatePreviewWorktop.js';
-import { finalizeWorktop } from './finalizeWorktop.js';
-import { setInnerOuterEdges } from './setInnerOuterEdges.js';
+import { snapToGrid } from "./snapToGrid.js";
+import { updatePreviewWorktop } from "./updatePreviewWorktop.js";
+import { finalizeWorktop } from "./finalizeWorktop.js";
+import { setInnerOuterEdges } from "./setInnerOuterEdges.js";
 
 /**
  * Handle mouse up event
@@ -11,7 +11,7 @@ import { setInnerOuterEdges } from './setInnerOuterEdges.js';
 export function handleMouseUp(pointer, canvas) {
   // Get state from global scope
   const state = window.state;
-  
+
   if (!state.isDrawing) return;
 
   // End drawing
@@ -73,13 +73,40 @@ export function handleMouseUp(pointer, canvas) {
     // Store the current worktop as previous for the next worktop
     state.previousWorktop = worktop;
 
-    // Reset direction detection for next drawing
+    // Reset direction detection and state for next drawing
     state.detectedDirection = null;
     state.lastSignificantPoint = null;
     state.previousTurnDirection = null;
 
-    // Keep the edge labels for the next worktop if double-clicking to end
-    // This allows creating disconnected worktops with the same edge labels
+    // Reset isFirstSegment to true for the next structure
+    // This ensures the next worktop structure starts fresh
+    state.isFirstSegment = true;
+
+    // Reset previous worktop references to ensure the next structure is disconnected
+    // We always reset for new structures - double-click handling would need to be added if needed
+    {
+      state.previousWorktop = null;
+      state.previousWorktopDirection = null;
+
+      // Reset edge labels for the next structure
+      state.currentEdgeLabels = {
+        top: null,
+        bottom: null,
+        left: null,
+        right: null,
+      };
+      state.previousEdgeLabels = {
+        top: null,
+        bottom: null,
+        left: null,
+        right: null,
+      };
+    }
+
+    console.log(
+      "State reset for next worktop structure. isFirstSegment =",
+      state.isFirstSegment
+    );
   } else {
     // If we haven't detected a direction yet, just update the line
     state.currentLine.set({

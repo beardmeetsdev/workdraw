@@ -1,8 +1,8 @@
-import { snapToGrid } from './snapToGrid.js';
-import { createPreviewWorktop } from './createPreviewWorktop.js';
-import { updatePreviewWorktop } from './updatePreviewWorktop.js';
-import { finalizeWorktop } from './finalizeWorktop.js';
-import { setInnerOuterEdges } from './setInnerOuterEdges.js';
+import { snapToGrid } from "./snapToGrid.js";
+import { createPreviewWorktop } from "./createPreviewWorktop.js";
+import { updatePreviewWorktop } from "./updatePreviewWorktop.js";
+import { finalizeWorktop } from "./finalizeWorktop.js";
+import { setInnerOuterEdges } from "./setInnerOuterEdges.js";
 
 /**
  * Handle mouse move event
@@ -12,7 +12,7 @@ import { setInnerOuterEdges } from './setInnerOuterEdges.js';
 export function handleMouseMove(pointer, canvas) {
   // Get state from global scope
   const state = window.state;
-  
+
   if (!state.isDrawing) return;
 
   // Snap to grid if enabled
@@ -46,11 +46,14 @@ export function handleMouseMove(pointer, canvas) {
     // Create a preview worktop
     createPreviewWorktop(canvas);
 
-    // After detecting a direction, this is no longer the first segment of a new drawing
-    // unless it's the very first worktop
-    if (state.worktops.length > 0) {
+    // After detecting a direction, check if this is part of an existing structure
+    // If we have a previous worktop, this is not the first segment
+    if (state.previousWorktop) {
       state.isFirstSegment = false;
+      console.log("Not first segment - connected to previous worktop");
     } else {
+      // This is the first segment of a new structure
+      console.log("First segment of a new structure");
       // For the very first worktop (A), set edge labels based on compass direction
       // The inner edge should always face the inside of the shape being drawn
       if (state.detectedDirection === "E" || state.detectedDirection === "W") {
@@ -142,7 +145,28 @@ export function handleMouseMove(pointer, canvas) {
         // Create a starting point for the new worktop that connects to the end of the previous one
         const newStart = { ...currentEnd };
 
-        // Update the last significant point to the new start point
+        // Apply adjustment to the new start point based on the turn direction
+        // This is crucial for proper corner connections
+        const halfWidth = state.worktopWidth / 2;
+
+        // Adjust the start point based on the new direction (turnDirection)
+        if (turnDirection === "E") {
+          newStart.x += halfWidth; // Adjust to the right for East direction
+        } else if (turnDirection === "W") {
+          newStart.x -= halfWidth; // Adjust to the left for West direction
+        } else if (turnDirection === "S") {
+          newStart.y += halfWidth; // Adjust downward for South direction
+        } else if (turnDirection === "N") {
+          newStart.y -= halfWidth; // Adjust upward for North direction
+        }
+
+        console.log(
+          `Adjusted start point at turn by (${
+            turnDirection === "E" || turnDirection === "W" ? halfWidth : 0
+          }, ${turnDirection === "N" || turnDirection === "S" ? halfWidth : 0})`
+        );
+
+        // Update the last significant point to the adjusted new start point
         state.lastSignificantPoint = { ...newStart };
 
         // Store the turn information for the next worktop

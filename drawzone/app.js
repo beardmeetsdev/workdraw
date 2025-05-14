@@ -1202,8 +1202,8 @@ function setInnerOuterEdges(
       state.currentEdgeLabels = {
         top: null,
         bottom: null,
-        left: "outer", // Left is outer for North
-        right: "inner", // Right is inner for North
+        left: "inner", // Left is inner for North (swapped from outer)
+        right: "outer", // Right is outer for North (swapped from inner)
       };
       console.log("RULE APPLIED: E to N (left to right, then up)");
     } else if (currentDirection === "S") {

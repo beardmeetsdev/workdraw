@@ -39,10 +39,9 @@ export function finalizeWorktop(
 
   // Apply corner adjustments
   // For worktops created at a turn, we need to extend the end point
-  // For worktops created on mouseup, we only need to adjust if it's not the first segment
-  const isPrevious =
-    turnDirection !== null ||
-    (state.previousWorktop !== null && !isFirstSegment);
+  // For worktops created on mouseup, we should NOT extend the end point
+  // Only extend the end point if this is a turn (turnDirection is not null and not the same as direction)
+  const isPrevious = turnDirection !== null && turnDirection !== direction;
   const isCurrent = true;
 
   const { adjustedStart, adjustedEnd } = adjustWorktopCorners(

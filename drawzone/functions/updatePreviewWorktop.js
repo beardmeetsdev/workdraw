@@ -155,7 +155,6 @@ export function updatePreviewWorktop(point, canvas) {
     points,
     state.detectedDirection,
     lengthMm,
-    isFirstSegment,
     false // Not permanent - will be removed on next update
   );
 

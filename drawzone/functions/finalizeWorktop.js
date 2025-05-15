@@ -304,7 +304,6 @@ export function finalizeWorktop(
     points,
     direction,
     lengthMm,
-    isFirstSegment,
     true // Set as permanent measurement
   );
 

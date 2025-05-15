@@ -4,7 +4,6 @@
  * @param {Array} points - Array of points defining the worktop polygon
  * @param {string} direction - Direction of the worktop (N, S, E, W)
  * @param {number} lengthMm - Length of the worktop in millimeters
- * @param {boolean} isFirstSegment - Whether this is the first segment
  * @param {boolean} isPermanent - Whether this is a permanent measurement (default: false)
  * @returns {Object} The created measurement text object
  */
@@ -13,7 +12,6 @@ export function addMeasurementToWorktop(
   points,
   direction,
   lengthMm,
-  isFirstSegment, // Keeping parameter for backward compatibility
   isPermanent = false
 ) {
   // Only remove temporary (non-permanent) measurements
@@ -52,36 +50,72 @@ export function addMeasurementToWorktop(
     permanentMeasurement: isPermanent, // Flag to identify permanent measurements
   });
 
-  // Position the text based on the direction
+  // Position the text based on the direction and which edge is outer
   let textX, textY;
 
   // Calculate center of the worktop
   const centerX = (points[0].x + points[1].x + points[2].x + points[3].x) / 4;
   const centerY = (points[0].y + points[1].y + points[2].y + points[3].y) / 4;
 
+  // Get edge labels from state to determine which edge is outer
+  const edgeLabels = state.currentEdgeLabels;
+
+  // Check if we're in a turn scenario for the first segment
+  const inTurn = state.previousTurnDirection !== null;
+  console.log("In turn:", inTurn);
+  console.log("isFirstSegment:", state.isFirstSegment);
+
   if (direction === "E" || direction === "W") {
     // For horizontal worktops (East or West)
-    // Position text above the worktop
     textX = centerX;
-    textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
+
+    // Special handling for first segment
+    if (state.isFirstSegment && !inTurn) {
+      // For the very first drawing action, default to top
+      textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
+    } else {
+      // For non-first segments or first segments in a turn
+      // Check which edge is outer and position accordingly
+      if (edgeLabels && edgeLabels.bottom === "outer") {
+        // Position text below the worktop if bottom is outer
+        textY = Math.max(points[2].y, points[3].y) + 25; // 25px below the bottom edge
+      } else {
+        // Default to top (either top is outer or no edge labels available)
+        textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
+      }
+    }
 
     measurementText.set({
       left: textX,
       top: textY,
       originX: "center",
       originY: "center",
+      angle: 0, // No rotation for horizontal measurements
     });
   } else {
     // For vertical worktops (North or South)
-    // Position text to the left of the worktop
-    textX = Math.min(points[0].x, points[3].x) - 25; // 25px to the left of the left edge
     textY = centerY;
+
+    // Special handling for first segment
+    if (state.isFirstSegment && !inTurn) {
+      // For the very first drawing action, default to left
+      textX = Math.min(points[0].x, points[3].x) - 25; // 25px to the left of the left edge
+    } else {
+      // For non-first segments or first segments in a turn
+      // Check which edge is outer and position accordingly
+      if (edgeLabels && edgeLabels.right === "outer") {
+        // Position text to the right of the worktop if right is outer
+        textX = Math.max(points[1].x, points[2].x) + 25; // 25px to the right of the right edge
+      } else {
+        // Default to left (either left is outer or no edge labels available)
+        textX = Math.min(points[0].x, points[3].x) - 25; // 25px to the left of the left edge
+      }
+    }
 
     // Create a rotated text for vertical measurements
     measurementText.set({
       left: textX,
       top: textY,
-      angle: -90, // Rotate 90 degrees counter-clockwise
       originX: "center",
       originY: "center",
     });

@@ -3,6 +3,7 @@ import { createPreviewWorktop } from "./createPreviewWorktop.js";
 import { updatePreviewWorktop } from "./updatePreviewWorktop.js";
 import { finalizeWorktop } from "./finalizeWorktop.js";
 import { setInnerOuterEdges } from "./setInnerOuterEdges.js";
+import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
 
 /**
  * Handle mouse move event
@@ -354,6 +355,11 @@ export function handleMouseMove(pointer, canvas) {
 
         // Create a new preview worktop for the new direction
         createPreviewWorktop(canvas);
+
+        // Display the measurement object in the debug console if available
+        if (currentWorktop && currentWorktop.measurementObject) {
+          updateDirectionsPanel(currentWorktop.measurementObject);
+        }
       }
     }
 

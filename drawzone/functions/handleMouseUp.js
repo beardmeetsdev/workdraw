@@ -2,6 +2,7 @@ import { snapToGrid } from "./snapToGrid.js";
 import { updatePreviewWorktop } from "./updatePreviewWorktop.js";
 import { finalizeWorktop } from "./finalizeWorktop.js";
 import { setInnerOuterEdges } from "./setInnerOuterEdges.js";
+import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
 
 /**
  * Handle mouse up event
@@ -57,6 +58,11 @@ export function handleMouseUp(pointer, canvas) {
 
     // Store the current worktop as previous for the next worktop
     state.previousWorktop = worktop;
+
+    // Display the measurement object in the debug console if available
+    if (worktop && worktop.measurementObject) {
+      updateDirectionsPanel(worktop.measurementObject);
+    }
 
     // Reset direction detection and state for next drawing
     state.detectedDirection = null;

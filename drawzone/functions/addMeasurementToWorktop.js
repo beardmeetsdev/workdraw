@@ -11,28 +11,31 @@ export function addMeasurementToWorktop(
   points,
   direction,
   lengthMm,
-  isFirstSegment
+  isFirstSegment // Keeping parameter for backward compatibility
 ) {
-  console.log("addMeasurementToWorktop called with:", {
-    direction,
-    lengthMm,
-    isFirstSegment,
-    points,
-  });
-
   // Remove any existing measurement elements
   const objects = canvas.getObjects();
   const existingMeasurements = objects.filter(
     (obj) => obj.measurementText === true
   );
 
-  console.log("Removing existing measurements:", existingMeasurements.length);
   existingMeasurements.forEach((obj) => {
     canvas.remove(obj);
   });
 
+  // For non-first segments, add the worktop width (600mm)
+  let displayLengthMm = lengthMm;
+
+  // Get state to check if there's a previous worktop
+  const state = window.state;
+
+  // Add 600mm if there's a previous worktop, regardless of isFirstSegment flag
+  if (state.previousWorktop) {
+    displayLengthMm += 600; // Add 600mm (worktop width)
+  }
+
   // Create the measurement text
-  let measurementText = new fabric.Text(`${lengthMm}mm`, {
+  let measurementText = new fabric.Text(`${displayLengthMm}mm`, {
     fontSize: 16,
     // Removed bold
     fill: "#444444", // Dark grey for all segments
@@ -51,15 +54,11 @@ export function addMeasurementToWorktop(
   const centerX = (points[0].x + points[1].x + points[2].x + points[3].x) / 4;
   const centerY = (points[0].y + points[1].y + points[2].y + points[3].y) / 4;
 
-  console.log("Worktop center:", { centerX, centerY });
-
   if (direction === "E" || direction === "W") {
     // For horizontal worktops (East or West)
     // Position text above the worktop
     textX = centerX;
     textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
-
-    console.log("Horizontal measurement position:", { textX, textY });
 
     measurementText.set({
       left: textX,
@@ -72,8 +71,6 @@ export function addMeasurementToWorktop(
     // Position text to the left of the worktop
     textX = Math.min(points[0].x, points[3].x) - 25; // 25px to the left of the left edge
     textY = centerY;
-
-    console.log("Vertical measurement position:", { textX, textY });
 
     // Create a rotated text for vertical measurements
     measurementText.set({
@@ -98,8 +95,6 @@ export function addMeasurementToWorktop(
       angle: 90,
     });
   }
-
-  console.log("Adding measurement text to canvas:", measurementText);
 
   // Add the text to the canvas
   canvas.add(measurementText);

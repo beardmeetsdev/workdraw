@@ -1,4 +1,5 @@
-import { adjustWorktopCorners } from './adjustWorktopCorners.js';
+import { adjustWorktopCorners } from "./adjustWorktopCorners.js";
+import { addMeasurementToWorktop } from "./addMeasurementToWorktop.js";
 
 /**
  * Update the preview worktop based on current mouse position
@@ -8,7 +9,7 @@ import { adjustWorktopCorners } from './adjustWorktopCorners.js';
 export function updatePreviewWorktop(point, canvas) {
   // Get state from global scope
   const state = window.state;
-  
+
   if (!state.previewWorktop || !state.detectedDirection) {
     return;
   }
@@ -23,18 +24,18 @@ export function updatePreviewWorktop(point, canvas) {
   } else {
     end.x = start.x; // Keep x coordinate the same for vertical lines
   }
-  
+
   // Apply corner adjustments for the preview
   const isFirstSegment = state.worktops.length === 0 || state.isFirstSegment;
   const isPrevious = false; // We don't adjust the end point in preview
   const isCurrent = true;
-  
+
   const { adjustedStart, adjustedEnd } = adjustWorktopCorners(
-    start, 
-    end, 
-    state.detectedDirection, 
-    isPrevious, 
-    isCurrent, 
+    start,
+    end,
+    state.detectedDirection,
+    isPrevious,
+    isCurrent,
     isFirstSegment
   );
 
@@ -120,6 +121,115 @@ export function updatePreviewWorktop(point, canvas) {
     top: end.y - 5,
   });
 
+  // Calculate and display measurements on the side panel
+  updateMeasurementsPanel(
+    adjustedStart,
+    adjustedEnd,
+    state.detectedDirection,
+    isFirstSegment
+  );
+
+  // Calculate length in pixels
+  let lengthPx;
+  if (state.detectedDirection === "E" || state.detectedDirection === "W") {
+    // For horizontal worktops (East or West)
+    lengthPx = Math.abs(adjustedEnd.x - adjustedStart.x);
+  } else {
+    // For vertical worktops (North or South)
+    lengthPx = Math.abs(adjustedEnd.y - adjustedStart.y);
+  }
+
+  // Calculate length in mm for display
+  const lengthMm = Math.round(lengthPx * 5); // Convert to mm (1px = 5mm)
+
+  console.log("Preview worktop length:", {
+    lengthPx,
+    lengthMm,
+    direction: state.detectedDirection,
+    isFirstSegment,
+  });
+
+  // Add measurement text on the side of the worktop
+  addMeasurementToWorktop(
+    canvas,
+    points,
+    state.detectedDirection,
+    lengthMm,
+    isFirstSegment
+  );
+
   // Render the canvas
   canvas.renderAll();
+}
+
+/**
+ * Update the measurements panel with current worktop dimensions
+ * @param {Object} start - Start point of the worktop
+ * @param {Object} end - End point of the worktop
+ * @param {string} direction - Direction of the worktop (N, S, E, W)
+ * @param {boolean} isFirstSegment - Whether this is the first segment
+ */
+function updateMeasurementsPanel(start, end, direction, isFirstSegment) {
+  // Get state from global scope
+  const state = window.state;
+
+  // Get the directions panel element
+  const directionsPanel = document.getElementById("directions-list");
+
+  // Calculate the length of the worktop in pixels
+  let lengthPx;
+  if (direction === "E" || direction === "W") {
+    // For horizontal worktops (East or West)
+    lengthPx = Math.abs(end.x - start.x);
+  } else {
+    // For vertical worktops (North or South)
+    lengthPx = Math.abs(end.y - start.y);
+  }
+
+  // Convert to millimeters (20 pixels = 100mm, so 1 pixel = 5mm)
+  // Each grid box is 20px and represents 100mm
+  const pixelsToMm = 5; // 1 pixel = 5mm
+  const lengthMm = Math.round(lengthPx * pixelsToMm);
+
+  // Fixed worktop width (600mm)
+  const widthMm = 600;
+
+  // Create or update the measurements section
+  let measurementsSection = document.querySelector(".measurements-section");
+  if (!measurementsSection) {
+    // Create a new section for measurements if it doesn't exist
+    measurementsSection = document.createElement("div");
+    measurementsSection.className = "measurements-section";
+    measurementsSection.style.marginTop = "20px";
+    measurementsSection.style.borderTop = "1px solid #ccc";
+    measurementsSection.style.paddingTop = "10px";
+
+    // Add a heading
+    const heading = document.createElement("h4");
+    heading.textContent = "Measurements";
+    heading.style.margin = "0 0 10px 0";
+    heading.style.color = "#2c3e50";
+    measurementsSection.appendChild(heading);
+
+    // Add to the directions panel
+    directionsPanel.appendChild(measurementsSection);
+  }
+
+  // Update the content of the measurements section
+  measurementsSection.innerHTML = `
+    <h4 style="margin: 0 0 10px 0; color: #2c3e50;">Measurements</h4>
+    <div style="font-family: monospace; font-size: 12px;">
+      <div style="margin-bottom: 5px; color: ${
+        isFirstSegment ? "red" : "black"
+      }">
+        Length: ${lengthMm}mm
+      </div>
+      <div style="margin-bottom: 5px;">
+        Width: ${widthMm}mm
+      </div>
+      <div style="font-size: 10px; color: #7f8c8d; margin-top: 10px;">
+        All sizes in mm
+      </div>
+    </div>
+  `;
 }

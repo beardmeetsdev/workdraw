@@ -1,6 +1,10 @@
 import { adjustWorktopCorners } from "./adjustWorktopCorners.js";
 import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
 
+// Import the addMeasurementToWorktop function from updatePreviewWorktop.js
+// We'll need to create this function in a separate file to avoid circular imports
+import { addMeasurementToWorktop } from "./addMeasurementToWorktop.js";
+
 /**
  * Finalize a worktop by saving it and keeping it on the canvas
  * @param {Object} start - Start point of the worktop centerline
@@ -281,6 +285,22 @@ export function finalizeWorktop(
 
   // Update directions panel
   updateDirectionsPanel(worktopData);
+
+  // Calculate length in pixels and convert to mm
+  let lengthPx;
+  if (direction === "E" || direction === "W") {
+    // For horizontal worktops (East or West)
+    lengthPx = Math.abs(adjustedEnd.x - adjustedStart.x);
+  } else {
+    // For vertical worktops (North or South)
+    lengthPx = Math.abs(adjustedEnd.y - adjustedStart.y);
+  }
+
+  // Convert to millimeters (1 pixel = 5mm)
+  const lengthMm = Math.round(lengthPx * 5);
+
+  // Add measurement text to the worktop
+  addMeasurementToWorktop(canvas, points, direction, lengthMm, isFirstSegment);
 
   // Clean up preview elements
   canvas.remove(state.previewWorktop);

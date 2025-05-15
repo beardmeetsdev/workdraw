@@ -50,10 +50,8 @@ export function handleMouseMove(pointer, canvas) {
     // If we have a previous worktop, this is not the first segment
     if (state.previousWorktop) {
       state.isFirstSegment = false;
-      console.log("Not first segment - connected to previous worktop");
     } else {
       // This is the first segment of a new structure
-      console.log("First segment of a new structure");
       // For the very first worktop (A), set edge labels based on compass direction
       // The inner edge should always face the inside of the shape being drawn
       if (state.detectedDirection === "E" || state.detectedDirection === "W") {
@@ -81,10 +79,6 @@ export function handleMouseMove(pointer, canvas) {
           right: "inner", // Right is inner for North
         };
       }
-      console.log(
-        "First worktop default edge labels:",
-        state.currentEdgeLabels
-      );
     }
   }
 
@@ -160,12 +154,6 @@ export function handleMouseMove(pointer, canvas) {
           newStart.y -= halfWidth; // Adjust upward for North direction
         }
 
-        console.log(
-          `Adjusted start point at turn by (${
-            turnDirection === "E" || turnDirection === "W" ? halfWidth : 0
-          }, ${turnDirection === "N" || turnDirection === "S" ? halfWidth : 0})`
-        );
-
         // Update the last significant point to the adjusted new start point
         state.lastSignificantPoint = { ...newStart };
 
@@ -183,11 +171,6 @@ export function handleMouseMove(pointer, canvas) {
 
         // Apply the edge labels to the previous worktop
         if (state.previousWorktop && state.previousEdgeLabels) {
-          console.log(
-            "Updating previous worktop edge labels:",
-            state.previousEdgeLabels
-          );
-
           // IMPORTANT: Force a complete redraw of the canvas
           // First, store all the worktops
           const allWorktops = [...state.worktops];
@@ -211,13 +194,7 @@ export function handleMouseMove(pointer, canvas) {
             }
           });
 
-          // Log how many permanent measurements were preserved
-          const permanentMeasurements = canvas
-            .getObjects()
-            .filter((obj) => obj.permanentMeasurement === true);
-          console.log(
-            `Preserved ${permanentMeasurements.length} permanent measurements during turn`
-          );
+          // Permanent measurements are preserved by the condition above
 
           // Update the edge labels in the worktops array
           for (let i = 0; i < allWorktops.length; i++) {
@@ -229,7 +206,7 @@ export function handleMouseMove(pointer, canvas) {
                 to: turnDirection,
                 turn: turnDirection,
               };
-              console.log("Updated worktop in array:", allWorktops[i]);
+
               break;
             }
           }
@@ -370,22 +347,10 @@ export function handleMouseMove(pointer, canvas) {
 
           // Update the state.worktops array
           state.worktops = allWorktops;
-
-          // Log the updated worktop for debugging
-          console.log("Updated previous worktop:", state.previousWorktop);
         }
-
-        // Log the current edge labels for debugging
-        console.log("Current edge labels after turn:", state.currentEdgeLabels);
 
         // Change the direction to the new compass direction (turn direction)
         state.detectedDirection = turnDirection;
-
-        // Make sure the current edge labels are applied to the state
-        console.log(
-          "Setting current edge labels for new direction:",
-          state.currentEdgeLabels
-        );
 
         // Create a new preview worktop for the new direction
         createPreviewWorktop(canvas);

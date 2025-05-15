@@ -28,18 +28,11 @@ export function handleMouseUp(pointer, canvas) {
     // If we are, we should use the current edge labels that were set during the turn
     // Edge labels for the first segment were already set in handleMouseMove when direction was detected
 
-    // Log the current edge labels before finalizing
-    console.log(
-      "Edge labels before finalizing worktop:",
-      state.currentEdgeLabels
-    );
-
     // For the last worktop (on mouse up), we need to determine the appropriate edge labels
     // based on the previous worktop and the current direction
     if (state.previousWorktop && !state.isFirstSegment) {
       // This is the last worktop in a sequence (D in A-B-C-D)
       // We need to call setInnerOuterEdges to properly set its edge labels
-      console.log("Setting edge labels for last worktop in sequence");
 
       // The key insight: for the last worktop, we need to continue the pattern
       // from the previous worktops, ensuring inner edges face the inside of the shape
@@ -47,11 +40,6 @@ export function handleMouseUp(pointer, canvas) {
         state.detectedDirection, // Current direction
         state.previousWorktopDirection, // Previous direction
         state.detectedDirection // Use current direction as "turn" direction
-      );
-
-      console.log(
-        "Edge labels after setting for last worktop:",
-        state.currentEdgeLabels
       );
     }
 
@@ -63,9 +51,6 @@ export function handleMouseUp(pointer, canvas) {
       state.detectedDirection, // Use current direction as turn direction
       canvas
     );
-
-    // Log the worktop data for debugging
-    console.log("Finalized worktop:", worktop);
 
     // Store the current direction as previous for the next worktop
     state.previousWorktopDirection = state.detectedDirection;
@@ -102,11 +87,6 @@ export function handleMouseUp(pointer, canvas) {
         right: null,
       };
     }
-
-    console.log(
-      "State reset for next worktop structure. isFirstSegment =",
-      state.isFirstSegment
-    );
   } else {
     // If we haven't detected a direction yet, just update the line
     state.currentLine.set({

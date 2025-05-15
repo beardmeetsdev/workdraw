@@ -298,8 +298,21 @@ export function finalizeWorktop(
   // Convert to millimeters (1 pixel = 5mm)
   const lengthMm = Math.round(lengthPx * 5);
 
-  // Add measurement text to the worktop
-  addMeasurementToWorktop(canvas, points, direction, lengthMm, isFirstSegment);
+  // Add permanent measurement text to the worktop
+  const measurementText = addMeasurementToWorktop(
+    canvas,
+    points,
+    direction,
+    lengthMm,
+    isFirstSegment,
+    true // Set as permanent measurement
+  );
+
+  // Store the measurement object with the worktop data
+  worktopData.measurementObject = measurementText;
+
+  // Update the worktop in the array with the measurement object
+  state.worktops[state.worktops.length - 1] = worktopData;
 
   // Clean up preview elements
   canvas.remove(state.previewWorktop);

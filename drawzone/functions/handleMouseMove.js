@@ -197,18 +197,27 @@ export function handleMouseMove(pointer, canvas) {
           const currentPointDot = state.currentPointDot;
           const startLine = state.startLine;
 
-          // Clear the canvas of all objects except grid and preview elements
+          // Clear the canvas of all objects except grid, preview elements, and permanent measurements
           const objects = canvas.getObjects();
           objects.forEach((obj) => {
             if (
               !state.gridLines.includes(obj) &&
               obj !== previewWorktop &&
               obj !== currentPointDot &&
-              obj !== startLine
+              obj !== startLine &&
+              !(obj.permanentMeasurement === true) // Don't remove permanent measurements
             ) {
               canvas.remove(obj);
             }
           });
+
+          // Log how many permanent measurements were preserved
+          const permanentMeasurements = canvas
+            .getObjects()
+            .filter((obj) => obj.permanentMeasurement === true);
+          console.log(
+            `Preserved ${permanentMeasurements.length} permanent measurements during turn`
+          );
 
           // Update the edge labels in the worktops array
           for (let i = 0; i < allWorktops.length; i++) {
@@ -248,6 +257,9 @@ export function handleMouseMove(pointer, canvas) {
 
             // Add to canvas
             canvas.add(finalWorktop);
+
+            // Store the new fabric object reference
+            worktop.fabricObject = finalWorktop;
 
             // Add corner coordinate labels
             points.forEach((point, index) => {

@@ -149,13 +149,14 @@ export function updatePreviewWorktop(point, canvas) {
     isFirstSegment,
   });
 
-  // Add measurement text on the side of the worktop
+  // Add measurement text on the side of the worktop (non-permanent for preview)
   addMeasurementToWorktop(
     canvas,
     points,
     state.detectedDirection,
     lengthMm,
-    isFirstSegment
+    isFirstSegment,
+    false // Not permanent - will be removed on next update
   );
 
   // Render the canvas

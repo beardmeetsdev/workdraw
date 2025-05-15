@@ -5,21 +5,25 @@
  * @param {string} direction - Direction of the worktop (N, S, E, W)
  * @param {number} lengthMm - Length of the worktop in millimeters
  * @param {boolean} isFirstSegment - Whether this is the first segment
+ * @param {boolean} isPermanent - Whether this is a permanent measurement (default: false)
+ * @returns {Object} The created measurement text object
  */
 export function addMeasurementToWorktop(
   canvas,
   points,
   direction,
   lengthMm,
-  isFirstSegment // Keeping parameter for backward compatibility
+  isFirstSegment, // Keeping parameter for backward compatibility
+  isPermanent = false
 ) {
-  // Remove any existing measurement elements
+  // Only remove temporary (non-permanent) measurements
+  // This allows permanent measurements to stay on the canvas
   const objects = canvas.getObjects();
-  const existingMeasurements = objects.filter(
-    (obj) => obj.measurementText === true
+  const temporaryMeasurements = objects.filter(
+    (obj) => obj.measurementText === true && !obj.permanentMeasurement
   );
 
-  existingMeasurements.forEach((obj) => {
+  temporaryMeasurements.forEach((obj) => {
     canvas.remove(obj);
   });
 
@@ -45,6 +49,7 @@ export function addMeasurementToWorktop(
     originX: "center",
     originY: "center",
     measurementText: true, // Custom property to identify measurement elements
+    permanentMeasurement: isPermanent, // Flag to identify permanent measurements
   });
 
   // Position the text based on the direction
@@ -104,4 +109,7 @@ export function addMeasurementToWorktop(
 
   // Force canvas to render
   canvas.renderAll();
+
+  // Return the measurement text object so it can be stored with the worktop
+  return measurementText;
 }

@@ -1,9 +1,8 @@
 import { adjustWorktopCorners } from "./adjustWorktopCorners.js";
 import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
 
-// Import the addMeasurementToWorktop function from updatePreviewWorktop.js
-// We'll need to create this function in a separate file to avoid circular imports
-import { addMeasurementToWorktop } from "./addMeasurementToWorktop.js";
+// Import the measurement function
+import { addAllEdgeMeasurements } from "./addMeasurementToWorktop.js";
 
 /**
  * Finalize a worktop by saving it and keeping it on the canvas
@@ -292,18 +291,23 @@ export function finalizeWorktop(
   // Convert to millimeters (1 pixel = 5mm)
   const lengthMm = Math.round(lengthPx * 5);
 
-  // Add permanent measurement text to the worktop
-  const measurementText = addMeasurementToWorktop(
+  // Add permanent measurement text to all edges of the worktop
+  const measurementTexts = addAllEdgeMeasurements(
     canvas,
     points,
     direction,
     lengthMm,
-    true, // Set as permanent measurement
-    edgeLabels // Pass the worktop's edge labels
+    600, // Fixed worktop width (600mm)
+    true // Set as permanent measurement
   );
 
-  // Store the measurement object with the worktop data
-  worktopData.measurementObject = measurementText;
+  // Store the measurement objects with the worktop data
+  worktopData.measurementObjects = measurementTexts;
+
+  // For backward compatibility, store the first measurement as measurementObject
+  if (measurementTexts.length > 0) {
+    worktopData.measurementObject = measurementTexts[0];
+  }
 
   // Update the worktop in the array with the measurement object
   state.worktops[state.worktops.length - 1] = worktopData;

@@ -1,5 +1,5 @@
 import { adjustWorktopCorners } from "./adjustWorktopCorners.js";
-import { addMeasurementToWorktop } from "./addMeasurementToWorktop.js";
+import { addAllEdgeMeasurements } from "./addMeasurementToWorktop.js";
 
 /**
  * Update the preview worktop based on current mouse position
@@ -142,14 +142,14 @@ export function updatePreviewWorktop(point, canvas) {
   // Calculate length in mm for display
   const lengthMm = Math.round(lengthPx * 5); // Convert to mm (1px = 5mm)
 
-  // Add measurement text on the side of the worktop (non-permanent for preview)
-  addMeasurementToWorktop(
+  // Add measurement text on all edges of the worktop (non-permanent for preview)
+  addAllEdgeMeasurements(
     canvas,
     points,
     state.detectedDirection,
     lengthMm,
-    false, // Not permanent - will be removed on next update
-    state.currentEdgeLabels // Pass the current edge labels
+    600, // Fixed worktop width (600mm)
+    false // Not permanent - will be removed on next update
   );
 
   // Render the canvas

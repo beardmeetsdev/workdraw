@@ -33,6 +33,7 @@ window.state = {
   directionChangeThreshold: 70, // Pixels to move before detecting direction change
   detectedDirection: null, // 'N', 'S', 'E', or 'W' (compass directions)
   isFirstSegment: true, // Is this the first segment in a drawing sequence
+  startPointAlreadyAdjusted: false, // Flag to indicate if the start point has already been adjusted after a turn
 
   // UI elements
   previewWorktop: null, // Current preview worktop

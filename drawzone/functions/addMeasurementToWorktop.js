@@ -5,6 +5,7 @@
  * @param {string} direction - Direction of the worktop (N, S, E, W)
  * @param {number} lengthMm - Length of the worktop in millimeters
  * @param {boolean} isPermanent - Whether this is a permanent measurement (default: false)
+ * @param {Object} customEdgeLabels - Optional edge labels to use instead of state.currentEdgeLabels
  * @returns {Object} The created measurement text object
  */
 export function addMeasurementToWorktop(
@@ -12,7 +13,8 @@ export function addMeasurementToWorktop(
   points,
   direction,
   lengthMm,
-  isPermanent = false
+  isPermanent = false,
+  customEdgeLabels = null
 ) {
   // Only remove temporary (non-permanent) measurements
   // This allows permanent measurements to stay on the canvas
@@ -57,30 +59,30 @@ export function addMeasurementToWorktop(
   const centerX = (points[0].x + points[1].x + points[2].x + points[3].x) / 4;
   const centerY = (points[0].y + points[1].y + points[2].y + points[3].y) / 4;
 
-  // Get edge labels from state to determine which edge is outer
-  const edgeLabels = state.currentEdgeLabels;
+  // Get edge labels from parameter or state to determine which edge is outer
+  const edgeLabels = customEdgeLabels || state.currentEdgeLabels;
 
   // Check if we're in a turn scenario for the first segment
   const inTurn = state.previousTurnDirection !== null;
-  console.log("In turn:", inTurn);
-  console.log("isFirstSegment:", state.isFirstSegment);
 
   if (direction === "E" || direction === "W") {
     // For horizontal worktops (East or West)
     textX = centerX;
 
-    // Special handling for first segment
-    if (state.isFirstSegment && !inTurn) {
-      // For the very first drawing action, default to top
+    // Check which edge is outer and position accordingly, even for first segment
+    if (edgeLabels && edgeLabels.bottom === "outer") {
+      // Position text below the worktop if bottom is outer
+      textY = Math.max(points[2].y, points[3].y) + 25; // 25px below the bottom edge
+    } else if (edgeLabels && edgeLabels.top === "outer") {
+      // Position text above the worktop if top is outer
       textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
     } else {
-      // For non-first segments or first segments in a turn
-      // Check which edge is outer and position accordingly
-      if (edgeLabels && edgeLabels.bottom === "outer") {
-        // Position text below the worktop if bottom is outer
-        textY = Math.max(points[2].y, points[3].y) + 25; // 25px below the bottom edge
+      // Default positioning if no edge labels are available
+      // For first segment without turn, default to the top (since that's typically outer for horizontal)
+      if (state.isFirstSegment && !inTurn) {
+        textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
       } else {
-        // Default to top (either top is outer or no edge labels available)
+        // Default to top for other cases
         textY = Math.min(points[0].y, points[1].y) - 25; // 25px above the top edge
       }
     }
@@ -96,18 +98,20 @@ export function addMeasurementToWorktop(
     // For vertical worktops (North or South)
     textY = centerY;
 
-    // Special handling for first segment
-    if (state.isFirstSegment && !inTurn) {
-      // For the very first drawing action, default to left
+    // Check which edge is outer and position accordingly, even for first segment
+    if (edgeLabels && edgeLabels.right === "outer") {
+      // Position text to the right of the worktop if right is outer
+      textX = Math.max(points[1].x, points[2].x) + 25; // 25px to the right of the right edge
+    } else if (edgeLabels && edgeLabels.left === "outer") {
+      // Position text to the left of the worktop if left is outer
       textX = Math.min(points[0].x, points[3].x) - 25; // 25px to the left of the left edge
     } else {
-      // For non-first segments or first segments in a turn
-      // Check which edge is outer and position accordingly
-      if (edgeLabels && edgeLabels.right === "outer") {
-        // Position text to the right of the worktop if right is outer
+      // Default positioning if no edge labels are available
+      // For first segment without turn, default to the right side (since that's typically outer for vertical)
+      if (state.isFirstSegment && !inTurn) {
         textX = Math.max(points[1].x, points[2].x) + 25; // 25px to the right of the right edge
       } else {
-        // Default to left (either left is outer or no edge labels available)
+        // Default to left side for other cases
         textX = Math.min(points[0].x, points[3].x) - 25; // 25px to the left of the left edge
       }
     }

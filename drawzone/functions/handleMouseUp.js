@@ -59,15 +59,14 @@ export function handleMouseUp(pointer, canvas) {
     // Store the current worktop as previous for the next worktop
     state.previousWorktop = worktop;
 
-    // Display the measurement object in the debug console if available
-    if (worktop && worktop.measurementObject) {
-      updateDirectionsPanel(worktop.measurementObject);
-    }
+    // Update the directions panel with information for all worktops
+    updateDirectionsPanel();
 
     // Reset direction detection and state for next drawing
     state.detectedDirection = null;
     state.lastSignificantPoint = null;
     state.previousTurnDirection = null;
+    state.startPointAlreadyAdjusted = false; // Reset the flag
 
     // Reset isFirstSegment to true for the next structure
     // This ensures the next worktop structure starts fresh

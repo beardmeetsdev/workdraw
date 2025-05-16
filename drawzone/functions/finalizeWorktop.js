@@ -35,7 +35,11 @@ export function finalizeWorktop(
   }
 
   // Check if this is the first segment
-  const isFirstSegment = state.worktops.length === 0 || state.isFirstSegment;
+  // For worktops created at a turn, we need to check if it's the first segment in the structure
+  // For worktops created on mouseup, we need to check if it's the first segment in the structure
+  const isFirstSegment =
+    state.worktops.length === 0 ||
+    (state.isFirstSegment && state.previousWorktop === null);
 
   // Apply corner adjustments
   // For worktops created at a turn, we need to extend the end point
@@ -210,9 +214,6 @@ export function finalizeWorktop(
   // We already determined the moving direction above
 
   // Store the worktop data
-  console.log("Creating worktop with edge labels:", {
-    ...state.currentEdgeLabels,
-  });
 
   // Make sure we have valid edge labels
   let edgeLabels = { ...state.currentEdgeLabels };
@@ -251,7 +252,6 @@ export function finalizeWorktop(
         right: "inner", // Right is inner for North
       };
     }
-    console.log("Default edge labels set:", edgeLabels);
   }
 
   const worktopData = {
@@ -272,12 +272,6 @@ export function finalizeWorktop(
 
   // Add to worktops array
   state.worktops.push(worktopData);
-
-  // Log the worktop data for debugging
-  console.log(
-    `Worktop ${worktopData.label} edge labels:`,
-    worktopData.edgeLabels
-  );
 
   // Update next label (A, B, C, etc.)
   state.nextLabel = String.fromCharCode(state.nextLabel.charCodeAt(0) + 1);
@@ -304,7 +298,8 @@ export function finalizeWorktop(
     points,
     direction,
     lengthMm,
-    true // Set as permanent measurement
+    true, // Set as permanent measurement
+    edgeLabels // Pass the worktop's edge labels
   );
 
   // Store the measurement object with the worktop data

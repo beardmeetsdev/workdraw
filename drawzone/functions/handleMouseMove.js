@@ -158,10 +158,16 @@ export function handleMouseMove(pointer, canvas) {
         // Update the last significant point to the adjusted new start point
         state.lastSignificantPoint = { ...newStart };
 
+        // Set the flag to indicate that the start point has already been adjusted
+        state.startPointAlreadyAdjusted = true;
+
         // Store the turn information for the next worktop
         state.previousTurnDirection = turnDirection;
         state.previousWorktopDirection = state.detectedDirection;
         state.previousWorktop = currentWorktop;
+
+        // After a turn, the next worktop is not the first segment
+        state.isFirstSegment = false;
 
         // Set inner/outer edges for both the previous and current worktop
         setInnerOuterEdges(
@@ -356,10 +362,8 @@ export function handleMouseMove(pointer, canvas) {
         // Create a new preview worktop for the new direction
         createPreviewWorktop(canvas);
 
-        // Display the measurement object in the debug console if available
-        if (currentWorktop && currentWorktop.measurementObject) {
-          updateDirectionsPanel(currentWorktop.measurementObject);
-        }
+        // Update the directions panel with information for all worktops
+        updateDirectionsPanel();
       }
     }
 

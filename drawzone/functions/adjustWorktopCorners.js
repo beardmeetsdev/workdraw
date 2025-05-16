@@ -18,7 +18,7 @@ export function adjustWorktopCorners(
 ) {
   // Get state from global scope
   const state = window.state;
-  
+
   const halfWidth = state.worktopWidth / 2;
 
   // Create copies of start and end points that we can adjust
@@ -41,7 +41,8 @@ export function adjustWorktopCorners(
 
   // For the first segment in a drawing session, don't shorten the start point
   // This ensures the worktop starts from the initial click point
-  if (isCurrent && !isFirstSegment) {
+  // Also, don't adjust the start point if it has already been adjusted after a turn
+  if (isCurrent && !isFirstSegment && !state.startPointAlreadyAdjusted) {
     // For current worktop (but not the first segment), shorten the start point by half the worktop width
     if (direction === "E") {
       adjustedStart.x += halfWidth; // Shorten from the left

@@ -86,24 +86,27 @@ button.active {
 }
 
 .directions-panel {
-  width: 200px;
+  width: 300px;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
   padding: 15px;
   overflow-y: auto;
+  max-height: calc(100vh - 180px);
 }
 
 .directions-panel h3 {
   margin: 0 0 10px 0;
   color: #2c3e50;
-  font-size: 14px;
+  font-size: 16px;
   text-align: center;
+  font-weight: bold;
 }
 
 #directions-list {
   font-family: monospace;
   font-size: 12px;
+  line-height: 1.4;
 }
 
 #canvas {

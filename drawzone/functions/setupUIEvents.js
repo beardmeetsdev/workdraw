@@ -1,5 +1,7 @@
 import { resizeCanvas } from "./resizeCanvas.js";
 import { createGrid } from "./createGrid.js";
+import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
+import { detectWorktopConnections } from "./detectConnections.js";
 
 /**
  * Set up UI event listeners
@@ -53,11 +55,23 @@ export function setupUIEvents(canvas) {
       right: null,
     };
 
-    // Clear directions panel
-    document.getElementById("directions-list").innerHTML = "";
+    // Update directions panel to show empty state
+    updateDirectionsPanel();
 
     canvas.renderAll();
   });
+
+  // Detect connections button
+  document
+    .getElementById("detect-connections")
+    .addEventListener("click", function () {
+      // Detect connections between worktops
+      detectWorktopConnections(canvas);
+
+      // Log connections to console
+      console.log("Connections detected and measurements updated");
+      console.log("Worktops:", state.worktops);
+    });
 
   // Window resize
   window.addEventListener("resize", function () {

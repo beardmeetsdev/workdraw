@@ -41,6 +41,9 @@ window.state = {
   startLine: null, // Line showing start point
   startDot: null, // Dot showing start point
   gridLines: [], // Grid lines
+
+  // Connection points
+  connectionPoints: [], // Array to store connection points
 };
 
 // Initialize when DOM is loaded

@@ -1,92 +1,103 @@
 /**
- * Update the debug console panel
- * @param {Object} measurementObject - Optional measurement object to display in the debug console
+ * Update the debug console panel to show information for all worktops
+ * @param {Object} measurementObject - Optional measurement object to display in the debug console (not used in new implementation)
  */
 export function updateDirectionsPanel(measurementObject = null) {
+  // Get state from global scope
+  const state = window.state;
+
   const directionsPanel = document.getElementById("directions-list");
   directionsPanel.innerHTML = ""; // Clear existing content
 
-  // If a measurement object is provided, display its details in the debug console
-  if (measurementObject) {
-    const measurementInfo = document.createElement("div");
-    measurementInfo.style.fontFamily = "monospace";
-    measurementInfo.style.fontSize = "12px";
-    measurementInfo.style.marginBottom = "10px";
+  // Create a heading for the debug console
+  const heading = document.createElement("h4");
+  heading.textContent = "Worktop Information";
+  heading.style.margin = "0 0 15px 0";
+  heading.style.color = "#2c3e50";
+  heading.style.textAlign = "center";
+  directionsPanel.appendChild(heading);
 
-    // Create a heading
-    const heading = document.createElement("h4");
-    heading.textContent = "Measurement Object";
-    heading.style.margin = "0 0 10px 0";
-    heading.style.color = "#2c3e50";
-    measurementInfo.appendChild(heading);
-
-    // Format the measurement object properties
-    let infoText = "";
-
-    // Basic properties
-    infoText += `<strong>Text:</strong> ${measurementObject.text || "N/A"}<br>`;
-    infoText += `<strong>Position:</strong> (${Math.round(
-      measurementObject.left || 0
-    )}, ${Math.round(measurementObject.top || 0)})<br>`;
-    infoText += `<strong>Angle:</strong> ${measurementObject.angle || 0}°<br>`;
-    infoText += `<strong>Permanent:</strong> ${
-      measurementObject.permanentMeasurement ? "Yes" : "No"
-    }<br>`;
-
-    // Add more properties
-    if (measurementObject.width && measurementObject.height) {
-      infoText += `<strong>Size:</strong> ${Math.round(
-        measurementObject.width
-      )} × ${Math.round(measurementObject.height)}<br>`;
-    }
-
-    // Add origin information
-    infoText += `<strong>Origin:</strong> ${
-      measurementObject.originX || "center"
-    }, ${measurementObject.originY || "center"}<br>`;
-
-    // Add style information
-    infoText += `<strong>Font Size:</strong> ${
-      measurementObject.fontSize || "default"
-    }<br>`;
-    infoText += `<strong>Fill Color:</strong> ${
-      measurementObject.fill || "default"
-    }<br>`;
-
-    // Add measurement-specific properties
-    infoText += `<strong>Is Measurement:</strong> ${
-      measurementObject.measurementText ? "Yes" : "No"
-    }<br>`;
-
-    // Add the actual measurement value (parse from text)
-    const measurementValue = measurementObject.text
-      ? measurementObject.text.replace("mm", "")
-      : "N/A";
-    infoText += `<strong>Value:</strong> ${measurementValue}mm<br>`;
-
-    // Add direction information if available from the parent worktop
-    const worktop = state.worktops.find(
-      (w) => w.measurementObject === measurementObject
+  // Display information for all worktops
+  if (state.worktops && state.worktops.length > 0) {
+    // Sort worktops by label to ensure they're in order (A, B, C, etc.)
+    const sortedWorktops = [...state.worktops].sort((a, b) =>
+      a.label.localeCompare(b.label)
     );
-    if (worktop) {
-      infoText += `<br><strong>Worktop:</strong> ${worktop.label}<br>`;
-      infoText += `<strong>Direction:</strong> ${worktop.direction}<br>`;
+
+    // Create a container for all worktop info
+    const worktopsContainer = document.createElement("div");
+    worktopsContainer.style.fontFamily = "monospace";
+    worktopsContainer.style.fontSize = "12px";
+
+    // Process each worktop
+    sortedWorktops.forEach((worktop) => {
+      // Create a container for this worktop
+      const worktopInfo = document.createElement("div");
+      worktopInfo.style.marginBottom = "20px";
+      worktopInfo.style.padding = "10px";
+      worktopInfo.style.backgroundColor = "#f8f9fa";
+      worktopInfo.style.borderRadius = "5px";
+      worktopInfo.style.border = "1px solid #ddd";
+
+      // Format the worktop information
+      let infoText = "";
+
+      // Worktop label and basic info
+      infoText += `<strong>Worktop: ${worktop.label}</strong><br>`;
+
+      // Length information (from measurement object)
+      if (worktop.measurementObject && worktop.measurementObject.text) {
+        const lengthText = worktop.measurementObject.text.replace("mm", "");
+        infoText += `<strong>Text (length):</strong> ${lengthText}mm<br>`;
+      } else {
+        infoText += `<strong>Text (length):</strong> N/A<br>`;
+      }
+
+      // Edge labels information
+      infoText += `<strong>Edge Labels:</strong><br>`;
+      if (worktop.edgeLabels) {
+        infoText += `&nbsp;&nbsp;Top: ${worktop.edgeLabels.top || "N/A"}<br>`;
+        infoText += `&nbsp;&nbsp;Bottom: ${
+          worktop.edgeLabels.bottom || "N/A"
+        }<br>`;
+        infoText += `&nbsp;&nbsp;Left: ${worktop.edgeLabels.left || "N/A"}<br>`;
+        infoText += `&nbsp;&nbsp;Right: ${
+          worktop.edgeLabels.right || "N/A"
+        }<br>`;
+      } else {
+        infoText += `&nbsp;&nbsp;No edge labels available<br>`;
+      }
+
+      // Direction and first segment info
+      infoText += `<strong>Direction:</strong> ${
+        worktop.direction || "N/A"
+      }<br>`;
       infoText += `<strong>Is First Segment:</strong> ${
         worktop.isFirstSegment ? "Yes" : "No"
       }<br>`;
 
-      // Add adjusted start/end points
-      if (worktop.adjustedStart && worktop.adjustedEnd) {
-        infoText += `<strong>Adjusted Start:</strong> (${Math.round(
-          worktop.adjustedStart.x
-        )}, ${Math.round(worktop.adjustedStart.y)})<br>`;
-        infoText += `<strong>Adjusted End:</strong> (${Math.round(
-          worktop.adjustedEnd.x
-        )}, ${Math.round(worktop.adjustedEnd.y)})<br>`;
-      }
-    }
+      // Add the info to the worktop container
+      worktopInfo.innerHTML = infoText;
+      worktopsContainer.appendChild(worktopInfo);
+    });
 
-    measurementInfo.innerHTML += infoText;
-    directionsPanel.appendChild(measurementInfo);
+    // Add all worktop info to the directions panel
+    directionsPanel.appendChild(worktopsContainer);
+
+    // Add a note at the bottom
+    const note = document.createElement("div");
+    note.style.fontSize = "10px";
+    note.style.color = "#666";
+    note.style.marginTop = "10px";
+    note.style.textAlign = "center";
+    note.textContent = "All sizes in mm";
+    directionsPanel.appendChild(note);
+  } else {
+    // No worktops to display
+    const noWorktops = document.createElement("p");
+    noWorktops.textContent = "No worktops created yet.";
+    noWorktops.style.textAlign = "center";
+    noWorktops.style.color = "#666";
+    directionsPanel.appendChild(noWorktops);
   }
 }

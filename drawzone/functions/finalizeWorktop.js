@@ -2,7 +2,7 @@ import { adjustWorktopCorners } from "./adjustWorktopCorners.js";
 import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
 
 // Import the measurement function
-import { addAllEdgeMeasurements } from "./addMeasurementToWorktop.js";
+import { addAllEdgeMeasurements } from "./addAllEdgeMeasurements.js";
 
 /**
  * Finalize a worktop by saving it and keeping it on the canvas
@@ -267,6 +267,114 @@ export function finalizeWorktop(
     isFirstSegment: isFirstSegment,
     turnDirection: turnDirection,
     edgeLabels: edgeLabels, // Store the edge labels with the worktop
+
+    // Add connections structure for detecting connections
+    connections: {
+      left: {
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: {
+          start: null,
+          end: null,
+        },
+      },
+      right: {
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: {
+          start: null,
+          end: null,
+        },
+      },
+      top: {
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: {
+          start: null,
+          end: null,
+        },
+      },
+      bottom: {
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: {
+          start: null,
+          end: null,
+        },
+      },
+    },
+
+    // Add edges structure for connection detection
+    edges: {
+      left: {
+        original: {
+          x1: points[0].x, // TL
+          y1: points[0].y,
+          x2: points[3].x, // BL
+          y2: points[3].y,
+        },
+        adjusted: {
+          x1: points[0].x, // TL
+          y1: points[0].y,
+          x2: points[3].x, // BL
+          y2: points[3].y,
+        },
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: null,
+      },
+      right: {
+        original: {
+          x1: points[1].x, // TR
+          y1: points[1].y,
+          x2: points[2].x, // BR
+          y2: points[2].y,
+        },
+        adjusted: {
+          x1: points[1].x, // TR
+          y1: points[1].y,
+          x2: points[2].x, // BR
+          y2: points[2].y,
+        },
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: null,
+      },
+      top: {
+        original: {
+          x1: points[0].x, // TL
+          y1: points[0].y,
+          x2: points[1].x, // TR
+          y2: points[1].y,
+        },
+        adjusted: {
+          x1: points[0].x, // TL
+          y1: points[0].y,
+          x2: points[1].x, // TR
+          y2: points[1].y,
+        },
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: null,
+      },
+      bottom: {
+        original: {
+          x1: points[3].x, // BL
+          y1: points[3].y,
+          x2: points[2].x, // BR
+          y2: points[2].y,
+        },
+        adjusted: {
+          x1: points[3].x, // BL
+          y1: points[3].y,
+          x2: points[2].x, // BR
+          y2: points[2].y,
+        },
+        connectedTo: null,
+        connectedEdge: null,
+        connectionSegment: null,
+      },
+    },
   };
 
   // Add to worktops array
@@ -297,7 +405,6 @@ export function finalizeWorktop(
     points,
     direction,
     lengthMm,
-    600, // Fixed worktop width (600mm)
     true // Set as permanent measurement
   );
 

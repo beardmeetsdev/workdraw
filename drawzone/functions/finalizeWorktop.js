@@ -265,6 +265,7 @@ export function finalizeWorktop(
     corners: [...points],
     fabricObject: finalWorktop,
     isFirstSegment: isFirstSegment,
+    isLastSegment: true, // Initially set as the last segment, will be updated when new worktops are added
     turnDirection: turnDirection,
     edgeLabels: edgeLabels, // Store the edge labels with the worktop
 
@@ -377,6 +378,14 @@ export function finalizeWorktop(
     },
   };
 
+  // Update isLastSegment for previous worktops
+  if (state.worktops.length > 0) {
+    // Set isLastSegment to false for all existing worktops
+    for (const worktop of state.worktops) {
+      worktop.isLastSegment = false;
+    }
+  }
+
   // Add to worktops array
   state.worktops.push(worktopData);
 
@@ -405,7 +414,8 @@ export function finalizeWorktop(
     points,
     direction,
     lengthMm,
-    true // Set as permanent measurement
+    true, // Set as permanent measurement
+    edgeLabels // Pass edge labels to determine inner/outer edges
   );
 
   // Store the measurement objects with the worktop data

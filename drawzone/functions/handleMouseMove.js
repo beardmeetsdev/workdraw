@@ -4,6 +4,7 @@ import { updatePreviewWorktop } from "./updatePreviewWorktop.js";
 import { finalizeWorktop } from "./finalizeWorktop.js";
 import { setInnerOuterEdges } from "./setInnerOuterEdges.js";
 import { updateDirectionsPanel } from "./updateDirectionsPanel.js";
+import { updateMeasurementEdgeTypes } from "./updateMeasurementEdgeTypes.js";
 
 /**
  * Handle mouse move event
@@ -214,6 +215,10 @@ export function handleMouseMove(pointer, canvas) {
                 turn: turnDirection,
               };
 
+              // Update the measurement edge types to match the new edge labels
+              // Also update the measurement text on the canvas
+              updateMeasurementEdgeTypes(allWorktops[i], canvas);
+
               break;
             }
           }
@@ -225,6 +230,10 @@ export function handleMouseMove(pointer, canvas) {
             to: turnDirection,
             turn: turnDirection,
           };
+
+          // Update the measurement edge types to match the new edge labels
+          // Also update the measurement text on the canvas
+          updateMeasurementEdgeTypes(state.previousWorktop, canvas);
 
           // Redraw all worktops with their current edge labels
           allWorktops.forEach((worktop) => {

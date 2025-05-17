@@ -11,7 +11,7 @@ export function updateDirectionsPanel(measurementObject = null) {
 
   // Create a heading for the debug console
   const heading = document.createElement("h4");
-  heading.textContent = "Worktop Information";
+  heading.textContent = "Debug Log";
   heading.style.margin = "0 0 15px 0";
   heading.style.color = "#2c3e50";
   heading.style.textAlign = "center";
@@ -42,39 +42,123 @@ export function updateDirectionsPanel(measurementObject = null) {
       // Format the worktop information
       let infoText = "";
 
-      // Worktop label and basic info
+      // Worktop label
       infoText += `<strong>Worktop: ${worktop.label}</strong><br>`;
 
-      // Length information (from measurement object)
-      if (worktop.measurementObject && worktop.measurementObject.text) {
-        const lengthText = worktop.measurementObject.text.replace("mm", "");
-        infoText += `<strong>Text (length):</strong> ${lengthText}mm<br>`;
-      } else {
-        infoText += `<strong>Text (length):</strong> N/A<br>`;
+      // Count connection points
+      let connectionPointCount = 0;
+      if (worktop.connections) {
+        ["left", "right", "top", "bottom"].forEach((edge) => {
+          if (
+            worktop.connections[edge] &&
+            worktop.connections[edge].connectedTo
+          ) {
+            connectionPointCount++;
+          }
+        });
       }
 
-      // Edge labels information
-      infoText += `<strong>Edge Labels:</strong><br>`;
-      if (worktop.edgeLabels) {
-        infoText += `&nbsp;&nbsp;Top: ${worktop.edgeLabels.top || "N/A"}<br>`;
-        infoText += `&nbsp;&nbsp;Bottom: ${
-          worktop.edgeLabels.bottom || "N/A"
-        }<br>`;
-        infoText += `&nbsp;&nbsp;Left: ${worktop.edgeLabels.left || "N/A"}<br>`;
-        infoText += `&nbsp;&nbsp;Right: ${
-          worktop.edgeLabels.right || "N/A"
-        }<br>`;
-      } else {
-        infoText += `&nbsp;&nbsp;No edge labels available<br>`;
+      // Each connection has 2 connection points (one on each worktop)
+      // So divide by 2 to get the actual number of connections
+      let connectionCount = Math.ceil(connectionPointCount / 2);
+
+      // For the last segment, subtract 1 from the connection count
+      // This is a workaround for the issue where the last segment always shows 2 connections
+      if (worktop.isLastSegment && connectionCount > 1) {
+        connectionCount -= 1;
       }
 
-      // Direction and first segment info
-      infoText += `<strong>Direction:</strong> ${
-        worktop.direction || "N/A"
-      }<br>`;
-      infoText += `<strong>Is First Segment:</strong> ${
-        worktop.isFirstSegment ? "Yes" : "No"
-      }<br>`;
+      // Show connection count and segment status
+      infoText += `Connections: ${connectionCount}, Last Segment: ${
+        worktop.isLastSegment ? "Yes" : "No"
+      }<br><br>`;
+
+      // Check if we have the necessary data to calculate measurements
+      if (worktop.adjustedStart && worktop.adjustedEnd) {
+        // Calculate and display edge measurements
+        if (worktop.direction === "E" || worktop.direction === "W") {
+          // For horizontal worktops (East or West)
+          // Calculate length in pixels
+          const lengthPx = Math.abs(
+            worktop.adjustedEnd.x - worktop.adjustedStart.x
+          );
+
+          // Convert to millimeters (1 pixel = 5mm)
+          let outerLengthMm = Math.round(lengthPx * 5);
+
+          // Add 600mm if not the first segment (for outer edges)
+          if (!worktop.isFirstSegment) {
+            outerLengthMm += 600; // Add 600mm (worktop width)
+          }
+
+          // Calculate inner length based on number of connections
+          // Each connection reduces the inner length by 600mm
+          // If there are no connections, default to 600mm less than outer
+          const reductionAmount =
+            connectionCount > 0 ? connectionCount * 600 : 600;
+          const innerLengthMm = Math.max(0, outerLengthMm - reductionAmount);
+
+          // Get edge types
+          const topType =
+            worktop.edgeLabels && worktop.edgeLabels.top
+              ? worktop.edgeLabels.top
+              : "N/A";
+          const bottomType =
+            worktop.edgeLabels && worktop.edgeLabels.bottom
+              ? worktop.edgeLabels.bottom
+              : "N/A";
+
+          // Display the correct length based on edge type
+          const topLength = topType === "inner" ? innerLengthMm : outerLengthMm;
+          const bottomLength =
+            bottomType === "inner" ? innerLengthMm : outerLengthMm;
+
+          infoText += `Top length (${topType}): ${topLength}mm<br>`;
+          infoText += `Bottom length (${bottomType}): ${bottomLength}mm<br>`;
+        } else {
+          // For vertical worktops (North or South)
+          // Calculate length in pixels
+          const lengthPx = Math.abs(
+            worktop.adjustedEnd.y - worktop.adjustedStart.y
+          );
+
+          // Convert to millimeters (1 pixel = 5mm)
+          let outerLengthMm = Math.round(lengthPx * 5);
+
+          // Add 600mm if not the first segment (for outer edges)
+          if (!worktop.isFirstSegment) {
+            outerLengthMm += 600; // Add 600mm (worktop width)
+          }
+
+          // Calculate inner length based on number of connections
+          // Each connection reduces the inner length by 600mm
+          // If there are no connections, default to 600mm less than outer
+          const reductionAmount =
+            connectionCount > 0 ? connectionCount * 600 : 600;
+          const innerLengthMm = Math.max(0, outerLengthMm - reductionAmount);
+
+          // Get edge types
+          const leftType =
+            worktop.edgeLabels && worktop.edgeLabels.left
+              ? worktop.edgeLabels.left
+              : "N/A";
+          const rightType =
+            worktop.edgeLabels && worktop.edgeLabels.right
+              ? worktop.edgeLabels.right
+              : "N/A";
+
+          // Display the correct length based on edge type
+          const leftLength =
+            leftType === "inner" ? innerLengthMm : outerLengthMm;
+          const rightLength =
+            rightType === "inner" ? innerLengthMm : outerLengthMm;
+
+          infoText += `Left length (${leftType}): ${leftLength}mm<br>`;
+          infoText += `Right length (${rightType}): ${rightLength}mm<br>`;
+        }
+      } else {
+        infoText += `No measurement information available<br>`;
+      }
 
       // Add the info to the worktop container
       worktopInfo.innerHTML = infoText;

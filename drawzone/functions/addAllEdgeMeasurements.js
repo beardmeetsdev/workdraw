@@ -5,6 +5,7 @@
  * @param {string} direction - Direction of the worktop (N, S, E, W)
  * @param {number} lengthMm - Length of the worktop in millimeters
  * @param {boolean} isPermanent - Whether this is a permanent measurement (default: false)
+ * @param {Object} edgeLabels - Object containing edge labels (inner/outer)
  * @returns {Array} Array of created measurement text objects
  */
 export function addAllEdgeMeasurements(
@@ -12,7 +13,8 @@ export function addAllEdgeMeasurements(
   points,
   direction,
   lengthMm,
-  isPermanent = false
+  isPermanent = false,
+  edgeLabels = null
 ) {
   // Only remove temporary (non-permanent) measurements
   // This allows permanent measurements to stay on the canvas
@@ -28,12 +30,12 @@ export function addAllEdgeMeasurements(
   // Get state to check if there's a previous worktop
   const state = window.state;
 
-  // Calculate the display length based on connections
-  let displayLengthMm = lengthMm;
+  // Calculate the outer length (for outer edges)
+  let outerLengthMm = lengthMm;
 
   // For preview worktops, we use a simple rule: add 600mm if there's a previous worktop
   if (!isPermanent && state.previousWorktop) {
-    displayLengthMm += 600; // Add 600mm (worktop width)
+    outerLengthMm += 600; // Add 600mm (worktop width)
   }
 
   // For permanent worktops, we need to check if this is an outer edge
@@ -43,8 +45,18 @@ export function addAllEdgeMeasurements(
     // For now, we'll use the same logic as preview worktops
     // This will be enhanced in the future to check for connected worktops
     if (state.previousWorktop) {
-      displayLengthMm += 600; // Add 600mm (worktop width)
+      outerLengthMm += 600; // Add 600mm (worktop width)
     }
+  }
+
+  // Calculate the inner length (for inner edges)
+  // Inner edges are always shorter than outer edges by 600mm
+  // This applies to all worktops, including the first segment
+  let innerLengthMm = lengthMm - 600;
+
+  // Ensure inner length is not negative
+  if (innerLengthMm < 0) {
+    innerLengthMm = 0;
   }
 
   // Array to store all measurement text objects
@@ -59,7 +71,10 @@ export function addAllEdgeMeasurements(
     // For horizontal worktops (East or West)
 
     // Top edge measurement (length)
-    const topMeasurement = new fabric.Text(`${displayLengthMm}mm`, {
+    // Use inner or outer length based on edge label
+    const topLength =
+      edgeLabels && edgeLabels.top === "inner" ? innerLengthMm : outerLengthMm;
+    const topMeasurement = new fabric.Text(`${topLength}mm`, {
       fontSize: 16,
       fill: "#444444", // Dark grey
       backgroundColor: "rgba(255, 255, 255, 0.7)",
@@ -73,13 +88,19 @@ export function addAllEdgeMeasurements(
       top: Math.min(points[0].y, points[1].y) - 25, // 25px above the top edge
       angle: 0,
       edge: "top",
+      isInnerEdge: edgeLabels && edgeLabels.top === "inner",
     });
     canvas.add(topMeasurement);
     topMeasurement.bringToFront();
     measurementTexts.push(topMeasurement);
 
     // Bottom edge measurement (length)
-    const bottomMeasurement = new fabric.Text(`${displayLengthMm}mm`, {
+    // Use inner or outer length based on edge label
+    const bottomLength =
+      edgeLabels && edgeLabels.bottom === "inner"
+        ? innerLengthMm
+        : outerLengthMm;
+    const bottomMeasurement = new fabric.Text(`${bottomLength}mm`, {
       fontSize: 16,
       fill: "#444444", // Dark grey
       backgroundColor: "rgba(255, 255, 255, 0.7)",
@@ -93,6 +114,7 @@ export function addAllEdgeMeasurements(
       top: Math.max(points[2].y, points[3].y) + 25, // 25px below the bottom edge
       angle: 0,
       edge: "bottom",
+      isInnerEdge: edgeLabels && edgeLabels.bottom === "inner",
     });
     canvas.add(bottomMeasurement);
     bottomMeasurement.bringToFront();
@@ -103,7 +125,10 @@ export function addAllEdgeMeasurements(
     // For vertical worktops (North or South)
 
     // Left edge measurement (length)
-    const leftMeasurement = new fabric.Text(`${displayLengthMm}mm`, {
+    // Use inner or outer length based on edge label
+    const leftLength =
+      edgeLabels && edgeLabels.left === "inner" ? innerLengthMm : outerLengthMm;
+    const leftMeasurement = new fabric.Text(`${leftLength}mm`, {
       fontSize: 16,
       fill: "#444444", // Dark grey
       backgroundColor: "rgba(255, 255, 255, 0.7)",
@@ -117,13 +142,19 @@ export function addAllEdgeMeasurements(
       top: centerY,
       angle: 90, // Rotate for vertical display
       edge: "left",
+      isInnerEdge: edgeLabels && edgeLabels.left === "inner",
     });
     canvas.add(leftMeasurement);
     leftMeasurement.bringToFront();
     measurementTexts.push(leftMeasurement);
 
     // Right edge measurement (length)
-    const rightMeasurement = new fabric.Text(`${displayLengthMm}mm`, {
+    // Use inner or outer length based on edge label
+    const rightLength =
+      edgeLabels && edgeLabels.right === "inner"
+        ? innerLengthMm
+        : outerLengthMm;
+    const rightMeasurement = new fabric.Text(`${rightLength}mm`, {
       fontSize: 16,
       fill: "#444444", // Dark grey
       backgroundColor: "rgba(255, 255, 255, 0.7)",
@@ -137,6 +168,7 @@ export function addAllEdgeMeasurements(
       top: centerY,
       angle: 90, // Rotate for vertical display
       edge: "right",
+      isInnerEdge: edgeLabels && edgeLabels.right === "inner",
     });
     canvas.add(rightMeasurement);
     rightMeasurement.bringToFront();
